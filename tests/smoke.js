@@ -37,7 +37,8 @@ async function startServer(env) {
   const port = await freePort();
   const child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { PATH: process.env.PATH, SYSTEMROOT: process.env.SYSTEMROOT, PORT: String(port), NO_ENV_FILE: '1', ...env },
+    // TRUST_PROXY: 시나리오마다 X-Real-IP 로 다른 사용자인 척한다 (Vercel 처럼)
+    env: { PATH: process.env.PATH, SYSTEMROOT: process.env.SYSTEMROOT, PORT: String(port), NO_ENV_FILE: '1', TRUST_PROXY: '1', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let log = '';
@@ -102,7 +103,8 @@ async function coreFlow(s, label, { password }) {
   const resolved = before.predictions.find((p) => p.status === 'resolved');
   if (resolved) ok((await s.call(`/api/predictions/${resolved.id}/vote`, { method: 'POST', ip, body: { choice: 'yes' } })).status === 400, `[${label}] 판정 끝난 예측 → 400`);
   const prompt = before.prompts[0];
-  ok((await s.call(`/api/prompts/${prompt.id}/copy`, { method: 'POST', ip })).data?.copies === prompt.copies + 1, `[${label}] 프롬프트 복사`);
+  const copied = (await s.call(`/api/prompts/${prompt.id}/copy`, { method: 'POST', ip })).data;
+  ok(copied?.copies === prompt.copies + 1 && copied.copiesToday === prompt.copiesToday + 1, `[${label}] 프롬프트 복사 (전체 · 오늘)`);
   const entry = before.challenge.entries[0];
   ok((await s.call(`/api/challenge/${entry.id}/vote`, { method: 'POST', ip })).data?.votes === entry.votes + 1, `[${label}] 챌린지 투표`);
 
@@ -150,6 +152,11 @@ async function coreFlow(s, label, { password }) {
   const back = restored.posts.find((p) => p.id === id);
   ok(back?.likes === 1 && back.firstDiscovery === false && restored.debate.comments.some((x) => x.id === cid), `[${label}] 되살리기 (숫자 유지, 최초 발견은 넘어간 쪽)`);
   ok(restored.posts.length === after.posts.length, `[${label}] 되살린 뒤 글 수`);
+
+  // 데이터 내보내기 (숨긴 글까지 전부)
+  if (password) ok((await s.call('/api/admin/export')).status === 401, `[${label}] 로그인 없이 내보내기 → 401`);
+  const dump = (await s.call('/api/admin/export', { cookie })).data?.data;
+  ok(dump && Object.keys(dump.posts).length === restored.posts.length + 1 && dump['site-config']?.published && dump.counters[`post:${id}:likes`] === 1, `[${label}] 데이터 내보내기`);
 
   // 운영자 닉네임은 관리자만
   const fake = { method: 'POST', ip: ip + '7', body: { author: '퓨쳐보드 지기', text: '사칭' } };
@@ -209,6 +216,11 @@ async function main() {
     const c2 = (await s2.call('/api/content')).data;
     ok(c2.posts.length === legacyCommunity.posts.length + 2, '다시 켜도 데이터 유지 · 중복 이전 없음');
     s2.stop();
+    // 로컬 서버는 X-Real-IP 를 믿지 않는다: 머리말을 바꿔도 같은 사람으로 센다
+    const s3 = await startServer({ DATA_DIR: dir, TRUST_PROXY: '' });
+    await s3.call('/api/posts', { method: 'POST', ip: '1.1.1.1', body: { title: '머리말 시험 1' } });
+    ok((await s3.call('/api/posts', { method: 'POST', ip: '2.2.2.2', body: { title: '머리말 시험 2' } })).status === 429, '로컬: X-Real-IP 를 바꿔도 횟수 제한 우회 불가');
+    s3.stop();
   }
 
   // 3. Upstash (가짜)

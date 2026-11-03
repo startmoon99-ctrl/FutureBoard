@@ -433,7 +433,7 @@ import { api } from './js/api.js';
       reloadFrame(); // 미리보기는 로그인한 뒤에만 불러온다 (Draft 는 관리자만 볼 수 있다)
       loadHidden().catch((ex) => toast(ex.message));
     } catch (e) {
-      if (e.status !== 401) toast('서버에 연결할 수 없어요: ' + e.message);
+      if (e.status !== 401) toast(e.status === 0 ? e.message : '서버에 연결할 수 없어요: ' + e.message);
     }
   }
 

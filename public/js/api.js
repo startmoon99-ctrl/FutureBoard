@@ -1,11 +1,17 @@
 // 서버 API 호출은 모두 이 파일을 거친다. 주소나 요청 모양이 바뀌면 여기만 고친다.
 
 export async function request(path, { method = 'GET', body } = {}) {
-  const res = await fetch(path, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    // 인터넷이 끊겼거나 서버에 닿지 못함 (브라우저의 영어 메시지 대신)
+    throw Object.assign(new Error('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요'), { status: 0 });
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(data.error || '요청에 실패했어요'), { status: res.status });
   return data;

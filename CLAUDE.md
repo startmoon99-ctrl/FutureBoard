@@ -40,8 +40,8 @@ lib/http.js          HttpError · sendJson · readBody · clientIp · 입력 정
 lib/config.js        환경(저장소 종류 · 키 접두어) · 분류 · 입력 길이 제한 · 횟수 제한 규칙
 lib/auth.js          관리자 인증(서명 쿠키) · requireAdmin
 lib/rate-limit.js    IP별 횟수 제한 (저장소에 세므로 서버 인스턴스를 넘어 적용)
-lib/routes/          auth(로그인) · site-config(관리자 모드) · community(글 · 투표 · 의견 · 콘텐츠) · moderation(관리자 글 · 댓글 숨기기)
-lib/repos/           posts · comments · polls(질문 · 예측 · 프롬프트 · 챌린지 숫자) · site-config · snapshot(GET /api/content 모양)
+lib/routes/          auth(로그인) · site-config(관리자 모드) · community(글 · 투표 · 의견 · 콘텐츠) · moderation(관리자 글 · 댓글 숨기기) · backup(데이터 내보내기)
+lib/repos/           posts · comments · polls(질문 · 예측 · 프롬프트 · 챌린지 숫자) · site-config · snapshot(GET /api/content 모양) · backup
 lib/db/              index(데이터 접근 함수 · KEYS) · backends(file · memory · Upstash) · engine(메모리 Redis) · migrate(스키마 이전)
 lib/seed.js          초기 데이터 (seed/*.json)
 public/js/core.js    주소 · BLOCKS · 상태 · 유틸 · 브라우저 저장소
@@ -62,6 +62,8 @@ scripts/check.js     정적 점검     tests/smoke.js  서버 통합 테스트 (
 
 글 · 댓글은 지우지 않는다. 관리자가 숨기면 `hiddenAt` 이 붙고 화면 데이터(snapshot)에서 빠진다. 관리자 모드의 '숨긴 글 · 댓글'에서 되살린다.
 운영자 닉네임(`config.js RESERVED_NAMES`)은 관리자로 로그인했을 때만 쓸 수 있다.
+'오늘 복사'는 한국 날짜별 칸(`prompt:<id>:copies:<YYYY-MM-DD>`)에 센다. 예전 `prompt:<id>:copiesToday` 는 쓰지 않는다.
+횟수 제한의 IP 는 Vercel 에서만 `x-real-ip` 를 믿는다(Vercel 이 덮어씀, 2026-11-03 확인). 로컬은 실제 접속 주소. 테스트는 `TRUST_PROXY=1`.
 
 ## 자주 하는 변경
 

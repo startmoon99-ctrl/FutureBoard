@@ -9,8 +9,9 @@ const path = require('path');
 const { exec } = require('child_process');
 
 // .env.local 이 있으면 환경 변수로 읽는다 (ADMIN_PASSWORD, Upstash 연결값 등). git 에는 올라가지 않는다.
+// 테스트(tests/smoke.js)는 NO_ENV_FILE 로 이 파일을 건너뛴다 — 실제 저장소에 연결되지 않게.
 const ENV_FILE = path.join(__dirname, '.env.local');
-if (fs.existsSync(ENV_FILE)) {
+if (!process.env.NO_ENV_FILE && fs.existsSync(ENV_FILE)) {
   for (const line of fs.readFileSync(ENV_FILE, 'utf8').split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
     if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
@@ -18,7 +19,7 @@ if (fs.existsSync(ENV_FILE)) {
 }
 
 const { handleApi } = require('./lib/app');
-const store = require('./lib/store');
+const db = require('./lib/db');
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -50,7 +51,15 @@ function sendFile(res, file) {
   });
 }
 
+// vercel.json 의 headers 와 같은 보안 헤더
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+};
+
 const server = http.createServer((req, res) => {
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
   const pathname = new URL(req.url, 'http://localhost').pathname.replace(/\/+$/, '') || '/';
   if (pathname.startsWith('/api/')) return handleApi(req, res);
 
@@ -95,7 +104,7 @@ server.on('error', (err) => {
 });
 
 server.listen(PORT, () => {
-  const storageLabel = { file: 'data 폴더 (이 PC)', redis: 'Upstash Redis (배포본과 같은 데이터)', none: '없음' }[store.kind];
+  const storageLabel = { file: 'data 폴더 (이 PC)', redis: 'Upstash Redis (배포본과 같은 데이터)', none: '없음' }[db.kind];
   console.log('');
   console.log('  퓨쳐보드 실행 중');
   console.log(`  · 사이트         http://localhost:${PORT}`);

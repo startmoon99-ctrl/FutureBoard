@@ -1,10 +1,12 @@
 {
   "name": "futureboard",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI와 미래기술 커뮤니티 퓨쳐보드",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node scripts/check.js",
+    "test": "node tests/smoke.js"
   },
   "engines": {
     "node": "24.x"

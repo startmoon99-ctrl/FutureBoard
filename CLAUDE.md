@@ -79,4 +79,5 @@ scripts/check.js     정적 점검     tests/smoke.js  서버 통합 테스트 (
 
 회원 계정 · 사용자 프로필 · 글 댓글 · 알림 · 신고 · Reputation 계산 · 서버 쪽 중복 투표 방지.
 회원 계정을 넣을 때: `lib/auth.js` 에 사용자 세션, `lib/repos/users.js`, 글 · 댓글의 `author` 옆에 `authorId`, 추천 · 투표는 `counters` 와 함께 "누가 눌렀는지"(예: 해시 `likes:<postId>` → userId) 를 저장해 중복을 서버에서 막는다.
-사용자 · 관계가 많아지면 관계형 DB(Postgres) 로 옮기는 것을 검토한다 — `lib/repos` 만 바꾸면 되도록 라우트는 저장소를 모른다.
+**회원 기능보다 먼저 Supabase(Postgres) 로 옮기기로 정했다(2026-11-03).** 설계 · 테이블 · 이전 순서는 [docs/db-design.md](docs/db-design.md).
+`lib/repos` 만 바꾸면 되도록 라우트는 저장소를 모른다. 옮기기 전에는 새 기능도 지금 저장소(Redis)에 두되, 테이블로 옮기기 쉬운 모양으로 만든다.

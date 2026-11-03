@@ -11,9 +11,10 @@ AI와 미래기술 커뮤니티. 기획서 v0.2의 첫 번째 프로토타입(43
 
 | 주소 | 내용 |
 | --- | --- |
-| `/` | 실제 사이트 (Published 구성) |
+| `/` | 메인: 관리자가 고른 블록들 (Published 구성) |
+| `/pulse` `/future` `/away` `/debate` `/predictions` `/community` `/prompts` `/challenge` `/people` | 블록마다 하나씩 있는 전용 페이지. 메인 블록의 "전체 보기"와 상단 메뉴가 연결된다 |
 | `/admin` | 관리자 모드 (블록 편집 · Draft · 미리보기 · 게시 · 롤백) |
-| `/preview` | Draft 미리보기 (관리자만) |
+| `/preview`, `/preview/…` | Draft 미리보기 (관리자만) |
 
 ## 구조
 
@@ -25,7 +26,12 @@ lib/app.js           API 처리 (로컬과 배포본이 같은 코드)
 lib/store.js         저장소: 로컬은 data 폴더, 배포본은 Upstash Redis
 lib/auth.js          관리자 비밀번호 · 로그인 쿠키
 lib/seed.js          저장소가 비어 있을 때 넣는 초기 데이터 (seed/*.json)
-public/              화면 (index.html · app.js = 사이트, admin.* = 관리자 모드)
+public/              화면 (index.html + js/ = 사이트, admin.* = 관리자 모드)
+  js/core.js         공통: 화면 모드 · 상태 · 페이지 주소 · 유틸 · API
+  js/widgets.js      메인과 페이지가 함께 쓰는 조각 (글 목록, 예측 카드, 그래프 …)
+  js/home.js         메인 블록
+  js/pages.js        블록별 전용 페이지
+  js/app.js          주소 이동(새로고침 없이 화면만 바꿈) · 사용자 동작 · 시작
 vercel.json          배포 설정: public/ 을 그대로 내보내고 /api · /admin · /preview 를 연결
 ```
 

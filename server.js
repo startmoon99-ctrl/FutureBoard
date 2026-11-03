@@ -34,8 +34,9 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
-// vercel.json 의 rewrites 와 같은 규칙
-const PAGES = { '/': 'index.html', '/preview': 'index.html', '/admin': 'admin.html' };
+// vercel.json 의 rewrites 와 같은 규칙. 사이트의 페이지 주소는 모두 index.html 이 받고 화면은 public/js 가 고른다.
+const SITE_PAGES = /^\/(preview)?\/?(pulse|future|away|debate|predictions|community|prompts|challenge|people)?$/;
+const pageFile = (pathname) => (pathname === '/admin' ? 'admin.html' : SITE_PAGES.test(pathname) ? 'index.html' : null);
 
 function sendFile(res, file) {
   fs.readFile(file, (err, buf) => {
@@ -57,7 +58,8 @@ const server = http.createServer((req, res) => {
     res.writeHead(405);
     return res.end();
   }
-  if (PAGES[pathname]) return sendFile(res, path.join(PUBLIC_DIR, PAGES[pathname]));
+  const page = pageFile(pathname);
+  if (page) return sendFile(res, path.join(PUBLIC_DIR, page));
 
   let file;
   try {

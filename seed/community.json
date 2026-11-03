@@ -113,6 +113,42 @@
     ]
   },
 
+  "futureHistory": [
+    { "minutesAgo": 18720, "index": 61, "mood": "조용한 날", "headline": "큰 발표 없이 기존 모델 개선 소식 위주" },
+    { "minutesAgo": 17280, "index": 63, "mood": "조금 변화", "headline": "오픈소스 코딩 모델이 상위권 벤치마크에 진입" },
+    { "minutesAgo": 15840, "index": 62, "mood": "조용한 날", "headline": "주말이라 커뮤니티 밈이 대부분" },
+    { "minutesAgo": 14400, "index": 64, "mood": "조금 변화", "headline": "가정용 로봇 청소기에 팔이 달리기 시작" },
+    { "minutesAgo": 12960, "index": 66, "mood": "변화", "headline": "AI 에이전트가 브라우저를 직접 다루는 기능이 여러 곳에서 공개" },
+    { "minutesAgo": 11520, "index": 65, "mood": "조용한 날", "headline": "규제 관련 토론이 이어진 하루" },
+    { "minutesAgo": 10080, "index": 67, "mood": "변화", "headline": "실시간 음성 통역이 이어폰 하나로 가능해짐" },
+    { "minutesAgo": 8640, "index": 68, "mood": "변화", "headline": "신약 후보 물질을 AI가 찾아 임상 진입" },
+    { "minutesAgo": 7200, "index": 68, "mood": "조용한 날", "headline": "새 소식은 적고 어제 소식의 후속 분석이 많았음" },
+    { "minutesAgo": 5760, "index": 70, "mood": "변화", "headline": "1분 넘는 AI 영상이 처음으로 사람 눈을 속이는 수준에" },
+    { "minutesAgo": 4320, "index": 69, "mood": "조용한 날", "headline": "벤치마크 논쟁, 새 기록은 없음" },
+    { "minutesAgo": 2880, "index": 71, "mood": "조금 변화", "headline": "휴머노이드 로봇이 물류 창고에서 정식 근무 시작" },
+    { "minutesAgo": 1440, "index": 72, "mood": "조금 변화", "headline": "바이브 코딩으로 만든 앱이 앱스토어 1위" }
+  ],
+
+  "debateArchive": [
+    { "id": "d-dev-replace", "minutesAgo": 1440, "question": "AI가 개발자를 대체할 수 있을까?", "yesLabel": "대체한다", "noLabel": "도구일 뿐", "yes": 812, "no": 1490,
+      "topComment": { "author": "SF읽는개발자", "choice": "no", "text": "코드를 짜는 일은 줄어도, 무엇을 만들지 정하는 일은 오히려 늘었음" } },
+    { "id": "d-robot-home", "minutesAgo": 2880, "question": "휴머노이드 로봇은 가정에 먼저 들어올까, 공장에 먼저 들어올까?", "yesLabel": "가정 먼저", "noLabel": "공장 먼저", "yes": 402, "no": 1633,
+      "topComment": { "author": "로봇덕후", "choice": "no", "text": "공장은 돈을 내고, 가정은 아직 넘어지면 큰일 남" } },
+    { "id": "d-ai-art", "minutesAgo": 4320, "question": "AI가 그린 그림도 예술일까?", "yesLabel": "예술이다", "noLabel": "아니다", "yes": 1187, "no": 1025,
+      "topComment": { "author": "픽셀몽상가", "choice": "yes", "text": "카메라가 처음 나왔을 때도 똑같은 말을 했다" } },
+    { "id": "d-license", "minutesAgo": 5760, "question": "10년 안에 운전면허가 필요 없어질까?", "yesLabel": "필요 없어진다", "noLabel": "여전히 필요", "yes": 688, "no": 1271,
+      "topComment": { "author": "익명", "choice": "no", "text": "면허는 남고, 따는 사람이 줄어들 듯" } },
+    { "id": "d-ai-friend", "minutesAgo": 7200, "question": "AI 친구와의 대화도 진짜 관계라고 할 수 있을까?", "yesLabel": "진짜다", "noLabel": "아니다", "yes": 921, "no": 978,
+      "topComment": { "author": "특이점온다", "choice": "yes", "text": "위로를 받았다면 그 순간만큼은 진짜였다고 생각함" } }
+  ],
+
+  "challengeArchive": [
+    { "id": "ca-seoul", "minutesAgo": 1440, "theme": "미래 서울을 이미지로 표현하기", "title": "한강 위에 떠 있는 2080년 여의도", "author": "픽셀몽상가", "tool": "이미지 생성", "emoji": "🌆", "colors": ["#0b2447", "#19a7ce"], "votes": 412, "entries": 38 },
+    { "id": "ca-store", "minutesAgo": 2880, "theme": "2050년의 편의점 광고 만들기", "title": "삼각김밥, 이제 기억으로 드세요", "author": "바이브장인", "tool": "이미지 + 카피", "emoji": "🍙", "colors": ["#3d1d0f", "#f97316"], "votes": 356, "entries": 29 },
+    { "id": "ca-letter", "minutesAgo": 4320, "theme": "로봇이 쓴 첫 연애편지", "title": "당신의 체온은 내 냉각팬을 멈추게 합니다", "author": "익명", "tool": "LLM 글", "emoji": "💌", "colors": ["#3f0d2b", "#ec4899"], "votes": 301, "entries": 44 },
+    { "id": "ca-dino", "minutesAgo": 5760, "theme": "공룡이 출근하는 지하철", "title": "2호선 티라노 칸, 손잡이가 너무 높다", "author": "주말개발자", "tool": "영상 생성", "emoji": "🦖", "colors": ["#14321b", "#84cc16"], "votes": 288, "entries": 31 }
+  ],
+
   "pulse": {
     "discussing": 1283,
     "recent10m": 42,

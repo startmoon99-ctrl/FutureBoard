@@ -5,6 +5,8 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/preview", "destination": "/index.html" }
+    { "source": "/preview", "destination": "/index.html" },
+    { "source": "/preview/:page(pulse|future|away|debate|predictions|community|prompts|challenge|people)", "destination": "/index.html" },
+    { "source": "/:page(pulse|future|away|debate|predictions|community|prompts|challenge|people)", "destination": "/index.html" }
   ]
 }

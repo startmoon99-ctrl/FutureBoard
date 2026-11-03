@@ -1,7 +1,34 @@
 // AI WORLD PULSE — 참고: Google Trends, Exploding Topics, 증권 시세판
 // 지금 AI 세계에서 무엇이 움직이는지. 상승률 · 토론 중 인원 · 추이선은 시뮬레이션(DEMO), 글 수 · 투표 수는 실제 데이터.
-import { state, $, esc, fmt, timeAgo, ms, byNewest, groupBy, pageHref, DAY, CAT_COLORS } from '../core.js';
-import { blockHead, shell, card, sparkline, trendSeries, postLink } from '../widgets.js';
+import { state, $, esc, fmt, timeAgo, ms, byNewest, groupBy, seeded, pageHref, DAY, CAT_COLORS } from '../core.js';
+import { blockHead, shell, card, postLink } from '../widgets.js';
+
+// ---------- 키워드 추이 그래프 ----------
+
+// 작은 추이선. 끝값이 오른쪽 끝에 오도록 그린다
+function sparkline(values, { w = 120, h = 32, color = 'var(--up)' } = {}) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const pts = values.map((v, i) => [((i / (values.length - 1)) * w).toFixed(1), (h - 3 - ((v - min) / span) * (h - 6)).toFixed(1)]);
+  const line = pts.map((p) => p.join(',')).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" preserveAspectRatio="none">
+    <polyline points="0,${h} ${line} ${w},${h}" fill="${color}" opacity=".12" stroke="none"/>
+    <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="2.4" fill="${color}"/></svg>`;
+}
+
+// 키워드의 24시간 추이 (DEMO: 키워드 이름으로 정해지는 모양, 끝값이 지금 상승률)
+function trendSeries(name, change) {
+  const rnd = seeded(name);
+  const n = 24;
+  const start = Math.max(1, change * (0.08 + rnd() * 0.2));
+  return Array.from({ length: n }, (_, i) => {
+    const t = i / (n - 1);
+    const curve = start + (change - start) * t ** (1.4 + rnd() * 1.2);
+    return Math.max(0, curve * (1 + (rnd() - 0.5) * 0.16 * (1 - t)));
+  });
+}
 
 const DEMO = '<span class="chip chip-demo" title="프로토타입: 상승률과 추이는 시뮬레이션입니다">DEMO</span>';
 const todayPosts = (c) => c.posts.filter((p) => Date.now() - ms(p.createdAt) < DAY).length;

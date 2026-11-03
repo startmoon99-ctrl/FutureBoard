@@ -2,8 +2,25 @@
 // 바로 복사해서 쓰는 프롬프트. 복사할 때마다 작성자의 '사용됨' 숫자가 오른다.
 import { state, esc, fmt, byNewest, pageState, ui, toast, copyText } from '../core.js';
 import { api } from '../api.js';
-import { blockHead, shell, card, chips, tabs, searchBox, promptCard } from '../widgets.js';
+import { blockHead, shell, card, chips, tabs, searchBox } from '../widgets.js';
 import { openWrite } from './community.js';
+
+// ---------- 프롬프트 카드 ----------
+
+// [대괄호] 부분은 채워 넣을 자리라서 강조한다
+const markSlots = (text) => esc(text).replace(/\[([^\]\n]{1,30})\]/g, '<mark class="slot">[$1]</mark>');
+
+function promptCard(p, rank, { full = false } = {}) {
+  return `
+    <div class="prompt ${full ? 'full' : ''}">
+      <div class="prompt-top"><span class="rank">#${rank}</span><span class="ttl">${esc(p.title)}</span><span class="chip">${esc(p.category)}</span></div>
+      <pre>${full ? markSlots(p.text) : esc(p.text)}</pre>
+      <div class="prompt-bottom">
+        <span>@${esc(p.author)}</span><span>· ${fmt(p.copies)}회 사용됨</span>${p.copiesToday ? `<span>· 오늘 ${fmt(p.copiesToday)}</span>` : ''}
+        <button class="btn btn-sm copy" data-action="copy-prompt" data-id="${esc(p.id)}">복사</button>
+      </div>
+    </div>`;
+}
 
 const byCopies = (a, z) => z.copies - a.copies;
 

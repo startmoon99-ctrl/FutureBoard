@@ -1,8 +1,69 @@
 // 미래 예측 — 참고: Metaculus, Manifold, Polymarket
 // YES / NO 로 걸고, 판정이 나면 적중 기록이 선구안 점수가 된다. 내 기록은 지금 브라우저에만 남는다.
-import { state, esc, fmt, byNewest, mine, pageState, pageHref, ui, toast } from '../core.js';
+import { state, esc, fmt, pct, dday, byNewest, mine, pageState, pageHref, ui, toast } from '../core.js';
 import { api } from '../api.js';
-import { blockHead, shell, card, chips, tabs, predictionRow, predictionCard, MEDALS } from '../widgets.js';
+import { blockHead, shell, card, chips, tabs, bar, MEDALS } from '../widgets.js';
+
+// ---------- 예측 한 줄 · 카드 ----------
+
+function verdictOf(p) {
+  const my = mine.get('pred', p.id);
+  if (p.status === 'resolved') {
+    let v = `판정: <b>${p.result === 'yes' ? 'YES' : 'NO'}</b>`;
+    if (my) v += my === p.result ? ' · <span class="verdict-hit">내 예측 적중!</span>' : ' · <span class="verdict-miss">내 예측 빗나감</span>';
+    return v;
+  }
+  return my ? `내 예측: <b>${my.toUpperCase()}</b> · 진행 중` : '';
+}
+
+function predButtons(p) {
+  const my = mine.get('pred', p.id);
+  if (p.status === 'resolved') return '<span class="chip">판정 완료</span>';
+  return `<div class="pred-btns">
+    <button class="vote yes ${my === 'yes' ? 'mine' : ''}" data-action="pred-vote" data-id="${esc(p.id)}" data-choice="yes" ${my ? 'disabled' : ''}>YES</button>
+    <button class="vote no ${my === 'no' ? 'mine' : ''}" data-action="pred-vote" data-id="${esc(p.id)}" data-choice="no" ${my ? 'disabled' : ''}>NO</button>
+  </div>`;
+}
+
+// 메인 블록용 한 줄
+function predictionRow(p) {
+  const y = pct(p.yes, p.no);
+  const v = verdictOf(p);
+  return `
+    <div class="pred">
+      <div class="pred-top"><span class="chip">${esc(p.category)}</span><span class="pred-q">${esc(p.question)}</span></div>
+      <div class="pred-bottom">
+        ${bar('pred-' + p.id, y)}
+        <span class="pred-pct">YES ${y}%</span>
+        ${predButtons(p)}
+      </div>
+      <div class="pred-meta">${fmt(p.yes + p.no)}명 예측 · 마감 ${esc(p.deadline)} ${v ? '· ' + v : ''}</div>
+    </div>`;
+}
+
+// 예측 페이지용 카드 (확률을 크게)
+function predictionCard(p) {
+  const y = pct(p.yes, p.no);
+  const v = verdictOf(p);
+  const resolved = p.status === 'resolved';
+  return `
+    <div class="pcard ${resolved ? 'resolved' : ''}">
+      <div class="pcard-top">
+        <span class="chip">${esc(p.category)}</span>
+        <span class="pcard-d ${!resolved && dday(p.deadline) === 'D-day' ? 'soon' : ''}">${resolved ? '판정 완료' : dday(p.deadline)}</span>
+      </div>
+      <p class="pcard-q">${esc(p.question)}</p>
+      <div class="pcard-prob">
+        <span class="big ${y >= 50 ? 'y' : 'n'}">${y}%</span>
+        <span class="muted">${y >= 50 ? 'YES 쪽' : 'NO 쪽'} 우세 · ${fmt(p.yes + p.no)}명</span>
+      </div>
+      ${bar('pcard-' + p.id, y)}
+      <div class="pcard-foot">
+        <span class="muted small">마감 ${esc(p.deadline)}${v ? ' · ' + v : ''}</span>
+        ${predButtons(p)}
+      </div>
+    </div>`;
+}
 
 const openFirst = (a, z) => (a.status === 'open' ? 0 : 1) - (z.status === 'open' ? 0 : 1);
 

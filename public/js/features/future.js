@@ -1,7 +1,31 @@
 // 오늘 인류의 미래 변화 — 참고: Our World in Data, 운명의 날 시계, 아침 브리핑 뉴스레터
 // 오늘의 변화를 "인류의 미래가 얼마나 바뀌었나"라는 눈으로. Future Index 는 지금 운영자 큐레이션.
 import { esc, ms, dayLabel, shortDate, groupBy } from '../core.js';
-import { blockHead, shell, card, lineChart } from '../widgets.js';
+import { blockHead, shell, card } from '../widgets.js';
+
+// ---------- 날짜별 꺾은선 그래프 ----------
+
+// 날짜별 꺾은선 그래프
+function lineChart(points, { h = 180, label = '추이' } = {}) {
+  const w = 640;
+  const pad = { t: 18, r: 16, b: 26, l: 32 };
+  const vals = points.map((p) => p.value);
+  const min = Math.floor(Math.min(...vals) - 2);
+  const max = Math.ceil(Math.max(...vals) + 2);
+  const x = (i) => pad.l + (i / (points.length - 1)) * (w - pad.l - pad.r);
+  const y = (v) => pad.t + (1 - (v - min) / (max - min)) * (h - pad.t - pad.b);
+  const line = points.map((p, i) => `${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const grid = [min, Math.round((min + max) / 2), max];
+  const last = points.length - 1;
+  return `<svg class="linechart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">
+    ${grid.map((g) => `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(g)}" y2="${y(g)}" class="grid"/><text x="${pad.l - 6}" y="${y(g) + 4}" class="axis" text-anchor="end">${g}</text>`).join('')}
+    <polyline points="${x(0)},${h - pad.b} ${line} ${x(last)},${h - pad.b}" class="area"/>
+    <polyline points="${line}" class="line"/>
+    ${points.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.value)}" r="${i === last ? 5 : 2.6}" class="${i === last ? 'dot now' : 'dot'}"><title>${esc(p.label)} · ${p.value}</title></circle>`).join('')}
+    <text x="${x(0)}" y="${h - 6}" class="axis">${esc(points[0].label)}</text>
+    <text x="${x(last)}" y="${h - 6}" class="axis" text-anchor="end">${esc(points[last].label)}</text>
+  </svg>`;
+}
 
 const LEVELS = { high: ['▲▲', 'lvl-high', '▲▲ 크게 바뀐 것'], mid: ['▲', 'lvl-mid', '▲ 조금 바뀐 것'], low: ['·', 'lvl-low', '· 지켜볼 것'] };
 const arrow = (delta) => (delta > 0 ? '▲' : delta < 0 ? '▼' : '—');

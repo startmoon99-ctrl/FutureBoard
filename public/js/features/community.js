@@ -2,7 +2,12 @@
 // 글 목록 · 검색 · 분류 · 추천 · 글쓰기. 글쓰기 창(openWrite)은 다른 기능(프롬프트 · 챌린지)도 쓴다.
 import { state, $, esc, fmt, ms, byNewest, store, mine, pageState, pageHref, currentPageType, ui, toast, timeAgo, DAY, WRITE_CATEGORIES } from '../core.js';
 import { api } from '../api.js';
-import { blockHead, shell, card, chips, tabs, searchBox, postRow, postLink, feedOrder } from '../widgets.js';
+import { blockHead, shell, card, chips, tabs, searchBox, postRow, postLink } from '../widgets.js';
+
+// ---------- 정렬 ----------
+
+// 고정 공지가 먼저, 그다음 최신순
+const feedOrder = (a, z) => (z.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(z.createdAt) - new Date(a.createdAt);
 
 const PAGE_SIZE = 20;
 const DEFAULTS = { cat: '전체', sort: 'new', q: '', page: 1 };

@@ -9,7 +9,7 @@
 ## 실행 · 점검 · 배포
 
 - 로컬: `START.bat` (= `node server.js --open`) → http://localhost:3000. 외부 패키지 없음, `npm install` 필요 없음.
-- 점검: `npm run check` (문법 · 모듈 import/export · data-action 연결 · 서버 모듈) → `npm test` (서버를 실제로 띄워 저장소 4가지 상태로 핵심 흐름 확인).
+- 점검: `npm run check` (문법 · 모듈 import/export · data-action 연결 · 서버 모듈 · 여러 곳에 있는 목록이 같은지) → `npm test` (서버를 실제로 띄워 저장소 4가지 상태로 핵심 흐름 확인).
   - `npm test -- data` 처럼 폴더를 주면 그 폴더의 예전 형식 데이터를 옮기는 것까지 확인한다 (복사본으로).
 - 배포: GitHub `main`에 push → Vercel 자동 배포 (https://future-board-mu.vercel.app). push 전에 `npm run check` 와 `npm test` 를 통과시킨다.
 - Vercel 환경 변수: `ADMIN_PASSWORD`(Production 필수), Upstash 연결값 `KV_REST_API_URL` · `KV_REST_API_TOKEN`(Storage 연결 시 자동).
@@ -22,7 +22,8 @@
    - 서버 라우트 → 저장소는 `lib/repos/*` 로만. 라우트에서 `lib/db` 를 직접 부르지 않는다. 저장소 키 이름은 `lib/db/index.js` 의 `KEYS` 에만 있다.
    - 권한 확인은 `lib/auth.js` 의 `requireAdmin()` 하나로. 횟수 제한은 `lib/rate-limit.js` 의 `limit(req, '종류')` 로.
 3. **값은 한 곳에.** 서버 상수 · 제한값 · 횟수 제한 규칙은 `lib/config.js`. 블록 목록(주소 · 제목 · 아이콘 · 관리자 표시)은 `public/js/core.js` 의 `BLOCKS`.
-   분류 목록은 서버 `lib/config.js CATEGORIES` 와 화면 `core.js CAT_COLORS` 두 곳이 같아야 한다.
+   빌드 단계가 없어서 어쩔 수 없이 두 곳 이상에 있는 목록이 있다. `npm run check` 가 서로 같은지 확인한다:
+   분류(`config.js CATEGORIES` ↔ `core.js CAT_COLORS`) · 블록 종류(`core.js BLOCKS` ↔ `seed/site-config.json`) · 페이지 주소(`BLOCKS` path ↔ `server.js SITE_PAGES` ↔ `vercel.json`).
 4. **Community Data 와 Site Configuration 은 섞지 않는다.** 관리자 모드(구성 변경 · 게시 · 롤백)는 `site-config` 만 바꾸고, 글 · 댓글 · 투표는 절대 건드리지 않는다.
 5. **데이터를 잃지 않는다.** 저장 구조를 바꿀 때는 `lib/db/migrate.js` 처럼 예전 데이터를 지우지 않고, "없을 때만 넣기"로 여러 번 실행해도 안전하게, 다 옮긴 뒤에 스키마 번호를 올린다. 테스트(`tests/smoke.js`)에 옮기기 전후 비교를 추가한다.
 6. **숫자는 counters 로.** 추천 · 조회 · 투표 · 복사처럼 자주 오르는 숫자는 `db.incr()` (원자적 증가). 문서 전체를 읽고 다시 쓰지 않는다.
@@ -48,7 +49,7 @@ lib/db/              index(데이터 접근 함수 · KEYS) · backends(file · 
 lib/seed.js          초기 데이터 (seed/*.json)
 public/js/core.js    주소 · BLOCKS · 상태 · 유틸 · 브라우저 저장소
 public/js/api.js     서버 호출 전부
-public/js/widgets.js 여러 기능이 함께 쓰는 화면 조각 (블록 머리 · 페이지 틀 · 필터 · 그래프 · 글 목록 · 카드)
+public/js/widgets.js 두 기능 이상이 쓰는 화면 조각만 (블록 머리 · 페이지 틀 · 카드 · 필터 · 막대 · 글 목록 · 메달). 한 기능 전용 카드 · 그래프는 그 기능 파일에
 public/js/features/  기능별 블록 · 페이지 · 동작. index.js 에 등록
 public/js/view-mode.js PC ↔ 모바일 화면 보기
 public/js/app.js     시작점: 방문 기록 · 메뉴 · 주소 이동 · 동작 연결

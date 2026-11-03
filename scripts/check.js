@@ -108,5 +108,33 @@ try {
   error('서버 모듈: ' + String(err.stderr).split('\n').slice(0, 6).join(' '));
 }
 
+console.log('\n[5] 여러 곳에 있는 목록이 서로 같은지');
+{
+  const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const sorted = (list) => [...list].sort();
+
+  // 분류: 서버 lib/config.js CATEGORIES ↔ 화면 core.js CAT_COLORS (순서까지)
+  const core = read('public/js/core.js');
+  const colors = core.match(/export const CAT_COLORS = \{([\s\S]*?)\};/);
+  const colorKeys = colors ? [...colors[1].matchAll(/'([^']+)':/g)].map((m) => m[1]) : [];
+  const { CATEGORIES } = require(path.join(ROOT, 'lib/config.js'));
+  if (!same(CATEGORIES, colorKeys)) error(`분류 목록이 다름: config.js CATEGORIES [${CATEGORIES}] ↔ core.js CAT_COLORS [${colorKeys}]`);
+
+  // 블록 종류: core.js BLOCKS ↔ seed/site-config.json
+  const blocks = [...core.matchAll(/^\s+(\w+): \{ path: '([^']+)'/gm)].map((m) => ({ type: m[1], path: m[2] }));
+  const seedTypes = require(path.join(ROOT, 'seed/site-config.json')).blocks.map((b) => b.type);
+  if (!blocks.length) error('core.js 에서 BLOCKS 를 읽지 못함');
+  if (!same(sorted(blocks.map((b) => b.type)), sorted(seedTypes))) error(`블록 종류가 다름: core.js BLOCKS [${blocks.map((b) => b.type)}] ↔ seed/site-config.json [${seedTypes}]`);
+
+  // 페이지 주소: core.js BLOCKS path ↔ server.js SITE_PAGES ↔ vercel.json rewrites
+  const paths = sorted(blocks.map((b) => b.path));
+  const server = read('server.js').match(/const SITE_PAGES = .*?\((?:preview)\)\?\\\/\?\(([^)]+)\)/);
+  if (!server || !same(sorted(server[1].split('|')), paths)) error(`페이지 주소가 다름: server.js SITE_PAGES ↔ core.js BLOCKS path [${paths}]`);
+  const rewrites = JSON.parse(read('vercel.json')).rewrites.map((r) => r.source.match(/:page\(([^)]+)\)/)).filter(Boolean);
+  if (rewrites.length !== 2) error('vercel.json 에서 페이지 주소 rewrite 2개(/:page, /preview/:page)를 찾지 못함');
+  for (const m of rewrites) if (!same(sorted(m[1].split('|')), paths)) error(`페이지 주소가 다름: vercel.json ${m[0]} ↔ core.js BLOCKS path [${paths}]`);
+}
+
 console.log(`\n오류 ${errors}건, 경고 ${warnings}건`);
 process.exit(errors ? 1 : 0);

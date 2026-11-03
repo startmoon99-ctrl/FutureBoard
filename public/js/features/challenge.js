@@ -2,8 +2,26 @@
 // 매일 하나의 주제로 AI 결과물을 만들고 하루 한 표씩 투표한다.
 import { state, esc, fmt, byNewest, dayLabel, mine, pageState, ui, toast } from '../core.js';
 import { api } from '../api.js';
-import { blockHead, shell, card, tabs, entryCard } from '../widgets.js';
+import { blockHead, shell, card, tabs, MEDALS } from '../widgets.js';
 import { openWrite } from './community.js';
+
+// ---------- 출품작 카드 ----------
+
+function entryCard(e, place, voted) {
+  return `
+    <div class="entry">
+      <div class="entry-thumb" style="background:linear-gradient(135deg, ${esc(e.colors[0])}, ${esc(e.colors[1])})">
+        ${place < 3 ? `<span class="place">${MEDALS[place]} ${place + 1}위</span>` : ''}${esc(e.emoji)}
+      </div>
+      <div class="entry-body">
+        <div class="entry-title">${esc(e.title)}</div>
+        <div class="entry-meta">
+          <span>@${esc(e.author)} · ${esc(e.tool)}</span>
+          <button class="vote ${voted === e.id ? 'mine' : ''}" data-action="challenge-vote" data-id="${esc(e.id)}" ${voted ? 'disabled' : ''}>▲ ${fmt(e.votes)}</button>
+        </div>
+      </div>
+    </div>`;
+}
 
 const byVotes = (a, z) => z.votes - a.votes;
 

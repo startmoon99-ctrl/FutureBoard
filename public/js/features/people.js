@@ -1,7 +1,23 @@
 // 이번 주 선구자 — 참고: Stack Overflow 평판, Kaggle 순위, GitHub 기여자
 // 활동량이 아니라 판단의 정확성과 발견의 가치로 순위. 지금 순위는 예시 데이터(회원 계정 전).
 import { esc, fmt, pageState } from '../core.js';
-import { blockHead, shell, card, tabs, personCard } from '../widgets.js';
+import { blockHead, shell, card, tabs, MEDALS } from '../widgets.js';
+
+// ---------- 사람 카드 ----------
+
+function personCard(p, i) {
+  return `
+    <div class="person">
+      <div class="person-name"><span class="medal">${MEDALS[i] || '·'}</span>@${esc(p.name)}</div>
+      <div class="person-rank">${esc(p.rank)}</div>
+      <div class="levels">${Object.entries(p.levels).map(([k, v]) => `<span class="level">${esc(k)} Lv.${v}</span>`).join('')}</div>
+      <div class="person-stats">
+        <span><b>${p.accuracy}%</b>예측 정확도</span>
+        <span><b>${fmt(p.firstFinds)}</b>최초 발견</span>
+        <span><b>${fmt(p.promptUses)}</b>프롬프트 사용</span>
+      </div>
+    </div>`;
+}
 
 function block(b, c) {
   return `

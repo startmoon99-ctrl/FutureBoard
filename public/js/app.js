@@ -128,8 +128,9 @@ function renderRoute() {
   document.title = (IS_PREVIEW ? '[미리보기] ' : '') + (type ? `${blockTitle(type)} · ${site}` : site);
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.nav === (type || 'home')));
   // 휴대폰에서 옆으로 밀리는 메뉴: 지금 페이지 탭이 보이게 한다
+  const nav = $('#nav');
   const on = $('#nav a.on');
-  if (on) $('#nav').scrollLeft = on.offsetLeft - 16;
+  if (on) nav.scrollLeft = on.offsetLeft - nav.offsetLeft - 12;
   updateCountdown();
 }
 

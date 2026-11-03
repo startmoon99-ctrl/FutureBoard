@@ -40,8 +40,10 @@ lib/http.js          HttpError · sendJson · readBody · clientIp · 입력 정
 lib/config.js        환경(저장소 종류 · 키 접두어) · 분류 · 입력 길이 제한 · 횟수 제한 규칙
 lib/auth.js          관리자 인증(서명 쿠키) · requireAdmin
 lib/rate-limit.js    IP별 횟수 제한 (저장소에 세므로 서버 인스턴스를 넘어 적용)
-lib/routes/          auth(로그인) · site-config(관리자 모드) · community(글 · 투표 · 의견 · 콘텐츠) · moderation(관리자 글 · 댓글 숨기기) · backup(데이터 내보내기)
-lib/repos/           posts · comments · polls(질문 · 예측 · 프롬프트 · 챌린지 숫자) · site-config · snapshot(GET /api/content 모양) · backup
+lib/routes/          기능별 HTTP: posts(글 + GET /api/content) · debate · predictions · prompts · challenge
+                     관리자: auth(로그인) · site-config(관리자 모드) · moderation(글 · 댓글 숨기기) · backup(데이터 내보내기)
+lib/repos/           기능별 데이터: posts · comments(공용 댓글) · debate · predictions · prompts · challenge · site-config · backup
+                     각 repo 가 자기 counters 키 이름과 화면 모양(view)을 가진다. snapshot 은 한 번에 읽어 view 들을 조립만 한다
 lib/db/              index(데이터 접근 함수 · KEYS) · backends(file · memory · Upstash) · engine(메모리 Redis) · migrate(스키마 이전)
 lib/seed.js          초기 데이터 (seed/*.json)
 public/js/core.js    주소 · BLOCKS · 상태 · 유틸 · 브라우저 저장소
@@ -70,7 +72,8 @@ scripts/check.js     정적 점검     tests/smoke.js  서버 통합 테스트 (
 - **새 API**: `lib/routes/<기능>.js` 에 라우트(검증 · 권한 · limit) → `lib/repos/<기능>.js` 에 데이터 함수 → `lib/app.js` 에 등록 한 줄 → `public/js/api.js` 에 호출 함수 → `tests/smoke.js` 에 확인 추가.
 - **새 메인 블록/페이지**: `core.js BLOCKS` 한 줄 → `features/<기능>.js` (block · page · actions) → `features/index.js` 등록 → `seed/site-config.json` 에 블록 (저장된 구성에는 자동으로 '숨김'으로 붙는다) → 페이지 주소를 `server.js SITE_PAGES` 와 `vercel.json` rewrites 에 추가.
 - **페이지 필터 · 정렬**: `chips()` · `tabs()` · `searchBox()` 에 `{ key, field }` 를 주면 `state.page[key][field]` 가 바뀌고 다시 그려진다. 따로 동작을 만들 필요 없다.
-- **새 숫자(추천 등)**: `db.incr('<종류>:<id>:<항목>')` + snapshot 에서 붙이기.
+- **새 숫자(추천 등)**: 그 기능 repo 에 키 이름 함수(`counterField`)를 두고 `db.incr()` 로 올린 뒤, 같은 repo 의 `view` 에서 붙인다. 키 이름을 다른 파일에 쓰지 않는다.
+  (`lib/db/migrate.js` 에 있는 키 이름은 스키마 2 로 옮길 때의 고정된 복사본이다. 고치지 않는다.)
 
 ## 아직 없는 것 (추가할 때 위 원칙대로)
 

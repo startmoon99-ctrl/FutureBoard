@@ -3,6 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // 화면 보기 전환(app.js 의 toggle-view)을 그리기 전에 적용한다.
+    //  · 휴대폰 + 'desktop' : 1280px 폭으로 그려 PC 화면을 축소해 보여준다
+    //  · PC + 'mobile'      : app.js 가 휴대폰 틀을 띄울 때까지 원래 화면을 숨긴다
+    (function () {
+      try {
+        var v = localStorage.getItem('fb_view');
+        var s = Math.min(screen.width, screen.height);
+        var phone = s > 0 && s < 768 && matchMedia('(pointer: coarse)').matches; // app.js 의 IS_PHONE 과 같은 기준
+        if (window.self !== window.top) return;
+        if (phone && v === 'desktop') {
+          document.querySelector('meta[name=viewport]').setAttribute('content', 'width=1280');
+          document.documentElement.classList.add('forced-desktop');
+        }
+        if (!phone && v === 'mobile') document.documentElement.classList.add('stage-pending');
+      } catch (e) { /* 저장소를 못 쓰면 기본 화면 */ }
+    })();
+  </script>
   <title>퓨쳐보드</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -23,6 +41,7 @@
       <nav class="nav" id="nav"></nav>
       <div class="topbar-right">
         <span class="streak" id="streak" hidden></span>
+        <button class="btn btn-ghost view-toggle" id="view-toggle" data-action="toggle-view" hidden></button>
         <button class="btn btn-primary" data-action="open-write">글쓰기</button>
         <a class="btn btn-ghost" href="/admin" title="관리자 빌더">⚙</a>
       </div>
@@ -93,6 +112,8 @@
       </div>
     </form>
   </dialog>
+
+  <button class="view-return" id="view-return" data-action="toggle-view" hidden>📱 모바일 화면으로</button>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

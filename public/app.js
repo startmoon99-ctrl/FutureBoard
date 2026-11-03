@@ -5,6 +5,26 @@
   const IS_PREVIEW = location.pathname.startsWith('/preview');
   // 관리자 빌더의 미리보기 칸(iframe) 안에서 열린 경우. 이때 관리자 링크를 누르면 빌더 안에 빌더가 열리므로 숨긴다.
   const IS_EMBEDDED = window.self !== window.top;
+  // PC 에서 '모바일 화면'으로 볼 때 휴대폰 틀 안에 들어간 페이지
+  const IS_PHONE_FRAME = new URLSearchParams(location.search).get('frame') === 'phone';
+
+  // 화면 보기 전환. 휴대폰에서는 PC 화면('desktop'), PC 에서는 모바일 화면('mobile')을 고를 수 있다.
+  // 실제 적용(뷰포트 폭 바꾸기)은 index.html <head> 의 스크립트가 그리기 전에 한다.
+  const SCREEN_MIN = Math.min(screen.width, screen.height);
+  const IS_PHONE = SCREEN_MIN > 0 && SCREEN_MIN < 768 && matchMedia('(pointer: coarse)').matches;
+  const viewMode = {
+    get() {
+      try { return localStorage.getItem('fb_view'); } catch { return null; }
+    },
+    set(v) {
+      try {
+        if (v) localStorage.setItem('fb_view', v);
+        else localStorage.removeItem('fb_view');
+      } catch { /* 저장소를 못 쓰면 전환하지 않는다 */ }
+    },
+  };
+  const FORCED_DESKTOP = !IS_EMBEDDED && IS_PHONE && viewMode.get() === 'desktop';
+  const PHONE_STAGE = !IS_EMBEDDED && !IS_PHONE && viewMode.get() === 'mobile';
   const SESSION_GAP = 30 * 60 * 1000;
 
   const state = {
@@ -396,7 +416,15 @@
     $('#tagline').textContent = cfg.tagline;
     $('#hero-date').textContent = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
     $('#preview-banner').hidden = !IS_PREVIEW;
-    if (IS_EMBEDDED) document.querySelectorAll('a[href="/admin"]').forEach((a) => { a.hidden = true; });
+    if (IS_EMBEDDED && !IS_PHONE_FRAME) document.querySelectorAll('a[href="/admin"]').forEach((a) => { a.hidden = true; });
+
+    // 틀 안(관리자 미리보기 · 휴대폰 틀)에서는 바깥 화면이 전환 버튼을 가진다
+    const toDesktop = IS_PHONE && !FORCED_DESKTOP;
+    const vt = $('#view-toggle');
+    vt.hidden = IS_EMBEDDED;
+    vt.innerHTML = toDesktop ? '🖥 PC<span class="vt-label"> 화면</span>' : '📱 모바일<span class="vt-label"> 화면</span>';
+    vt.title = toDesktop ? 'PC 화면으로 보기' : '모바일 화면으로 보기';
+    $('#view-return').hidden = !FORCED_DESKTOP;
 
     const visible = cfg.blocks.filter((b) => b.visible && renderers[b.type]);
     $('#nav').innerHTML = visible.map((b) => `<a href="#block-${esc(b.id)}">${esc(b.title)}</a>`).join('');
@@ -576,6 +604,12 @@
       openWrite({ category: 'AI아트', title: `[챌린지] ${state.content.challenge.theme} — `, aiLabel: 'AI 생성' });
     },
 
+    'toggle-view'() {
+      if (IS_PHONE) viewMode.set(FORCED_DESKTOP ? null : 'desktop');
+      else viewMode.set(PHONE_STAGE ? null : 'mobile');
+      location.reload();
+    },
+
     'open-write'() { openWrite(); },
     'close-write'() { $('#write-dialog').close(); },
   };
@@ -666,9 +700,28 @@
     }
   });
 
+  // ---------- PC 에서 모바일 화면 보기 ----------
+
+  // 페이지를 390px 폭의 틀(iframe) 안에 다시 띄운다. 틀 안은 진짜 좁은 화면이라 모바일 레이아웃이 그대로 적용된다.
+  function showPhoneStage() {
+    const params = new URLSearchParams(location.search);
+    params.set('frame', 'phone');
+    const src = location.pathname + '?' + params + location.hash;
+    document.body.className = 'phone-stage';
+    document.body.innerHTML = `
+      <div class="stage-bar">
+        <span class="stage-label">📱 모바일 화면 보기 <span class="muted">· 390 × 844</span></span>
+        <button class="btn btn-primary" data-action="toggle-view">🖥 PC 화면으로</button>
+      </div>
+      <div class="stage-device"><iframe src="${esc(src)}" title="모바일 화면"></iframe></div>
+      <p class="stage-note">프로토타입 확인용 화면이에요. 실제 휴대폰과 글자 크기·스크롤 느낌은 조금 다를 수 있어요.</p>`;
+    document.documentElement.classList.remove('stage-pending');
+  }
+
   // ---------- 시작 ----------
 
   async function init() {
+    if (PHONE_STAGE) return showPhoneStage();
     try {
       const [config, content] = await Promise.all([
         api('/api/config?mode=' + (IS_PREVIEW ? 'draft' : 'published')),

@@ -1,6 +1,6 @@
 // 퓨쳐보드 사이트의 시작점: 방문 기록 · 머리(메뉴) · 주소 이동 · 화면 그리기 · 동작 연결
 // 기능별 화면과 동작은 features/*.js 에 있고, 여기는 그것들을 이어 붙이기만 한다.
-import { IS_PREVIEW, state, ui, $, esc, store, toast, currentPageType, homeHref, pageHref, blockTitle } from './core.js';
+import { IS_PREVIEW, IS_EMBEDDED, state, ui, $, esc, store, toast, currentPageType, homeHref, pageHref, blockTitle } from './core.js';
 import { api } from './api.js';
 import { FEATURES, byType, actions, forms } from './features/index.js';
 import { PHONE_STAGE, renderViewToggle, toggleView, showPhoneStage } from './view-mode.js';
@@ -205,9 +205,15 @@ document.addEventListener('submit', async (e) => {
 async function init() {
   if (PHONE_STAGE) return showPhoneStage();
   try {
-    const [config, content] = await Promise.all([api.config(IS_PREVIEW ? 'draft' : 'published'), api.content()]);
+    const [config, content, session] = await Promise.all([
+      api.config(IS_PREVIEW ? 'draft' : 'published'),
+      api.content(),
+      api.admin.session().catch(() => null),
+    ]);
     state.config = config;
     state.content = content;
+    // 관리자 미리보기(iframe)는 사용자가 보는 모습 그대로 둔다
+    state.admin = !!session?.authed && !IS_PREVIEW && !IS_EMBEDDED;
     trackVisit();
     renderShell();
     onRoute();

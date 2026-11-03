@@ -147,6 +147,7 @@ export function postRow(p) {
         <div class="post-detail">${esc(p.body) || '<span class="muted">(본문 없음)</span>'}${p.link ? `\n<a class="link" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">↗ ${esc(p.link)}</a>` : ''}${p.firstDiscovery ? `\n<span class="chip chip-first">🏅 최초 발견자 @${esc(p.author)} · ${new Date(p.createdAt).toLocaleString('ko-KR')}</span>` : ''}
           <div class="post-actions">
             <button class="btn btn-sm like ${liked ? 'liked' : ''}" data-action="like-post" data-id="${esc(p.id)}" ${liked ? 'disabled' : ''}>♥ 추천 ${fmt(p.likes)}</button>
+            ${state.admin ? `<button class="btn btn-sm mod-btn" data-action="hide-post" data-id="${esc(p.id)}">🚫 숨기기 (관리자)</button>` : ''}
           </div>
         </div>` : ''}
     </article>`;

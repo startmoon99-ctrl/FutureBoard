@@ -202,6 +202,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .comment .side.yes { color: var(--yes); }
 .comment .side.no { color: var(--no); }
 .comment .when { color: var(--muted); font-size: 11px; margin-left: 6px; }
+.mod-link { background: none; border: 0; padding: 0; margin-left: 8px; font: inherit; font-size: 11px; color: var(--no); cursor: pointer; opacity: .8; }
+.mod-link:hover { opacity: 1; text-decoration: underline; }
 .inline-form { display: flex; gap: 6px; margin-top: 10px; }
 .inline-form input { flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
 .inline-form input.nick { flex: 0 0 90px; }
@@ -242,6 +244,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .post-detail .link { display: inline-block; margin-top: 8px; color: var(--cyan); word-break: break-all; }
 .post-actions { display: flex; gap: 8px; margin-top: 10px; white-space: normal; }
 .like.liked { border-color: var(--hot); color: var(--hot); }
+.mod-btn { margin-left: auto; color: var(--no); border-color: rgba(248, 113, 113, .4); }
 .more-btn { width: 100%; margin-top: 8px; }
 
 /* ---------- 프롬프트 ---------- */

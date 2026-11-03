@@ -1,4 +1,4 @@
-// 관리자 모드: 블록 편집 · Draft 저장 · 미리보기 · 게시 · 롤백
+// 관리자 모드: 블록 편집 · Draft 저장 · 미리보기 · 게시 · 롤백 · 숨긴 글 · 댓글 되살리기
 // 블록 이름은 사이트와 같은 목록(js/core.js BLOCKS), 서버 호출은 js/api.js 를 쓴다.
 import { BLOCKS, $, esc, toast } from './js/core.js';
 import { api } from './js/api.js';
@@ -140,6 +140,37 @@ import { api } from './js/api.js';
         </li>`;
     }).join('');
   }
+
+  // ---------- 숨긴 글 · 댓글 (커뮤니티 데이터. 사이트 구성과 따로 바로 적용된다) ----------
+
+  async function loadHidden() {
+    const { posts, comments } = await call(api.admin.hidden());
+    const rows = [
+      ...posts.map((p) => ({ kind: 'post', id: p.id, label: '글', text: p.title, who: p.author, at: p.hiddenAt })),
+      ...comments.map((c) => ({ kind: 'comment', id: c.id, label: '댓글', text: c.text, who: c.author, at: c.hiddenAt })),
+    ].sort((a, z) => new Date(z.at) - new Date(a.at));
+    $('#hidden-list').innerHTML = rows.map((r) => `
+      <li class="version">
+        <span class="v">${r.label}</span>
+        <span class="info"><div class="note">${esc(r.text)}</div><div class="when">@${esc(r.who)} · ${when(r.at)} 숨김</div></span>
+        <button class="btn btn-sm" data-unhide="${r.kind}" data-id="${esc(r.id)}">다시 보이기</button>
+      </li>`).join('') || '<li class="muted small">숨긴 글이나 댓글이 없어요</li>';
+  }
+
+  $('#btn-hidden-reload').addEventListener('click', () => loadHidden().catch((e) => toast(e.message)));
+  $('#hidden-list').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-unhide]');
+    if (!btn) return;
+    try {
+      const { unhide: kind, id } = btn.dataset;
+      await call(kind === 'post' ? api.admin.hidePost(id, false) : api.admin.hideComment(id, false));
+      await loadHidden();
+      reloadFrame();
+      toast('다시 보이게 했어요');
+    } catch (err) {
+      toast(err.message);
+    }
+  });
 
   // ---------- 미리보기 ----------
 
@@ -379,6 +410,7 @@ import { api } from './js/api.js';
       // 이미 편집 중이었다면(로그인 만료) 편집 내용을 지키고, 처음이면 서버 상태를 불러온다
       if (!draft) applyServer(await call(api.admin.state()));
       reloadFrame();
+      loadHidden().catch((ex) => toast(ex.message));
     } catch (ex) {
       err.textContent = ex.message;
       err.hidden = false;
@@ -399,6 +431,7 @@ import { api } from './js/api.js';
       if (!session.authed) return showLogin();
       applyServer(await call(api.admin.state()));
       reloadFrame(); // 미리보기는 로그인한 뒤에만 불러온다 (Draft 는 관리자만 볼 수 있다)
+      loadHidden().catch((ex) => toast(ex.message));
     } catch (e) {
       if (e.status !== 401) toast('서버에 연결할 수 없어요: ' + e.message);
     }

@@ -23,6 +23,7 @@ export function commentItem(x) {
   return `
     <li class="comment" data-cid="${esc(x.id)}">
       ${x.choice ? `<span class="side ${x.choice}">${x.choice.toUpperCase()}</span>` : ''}<span class="who">${esc(x.author)}</span>${esc(x.text)}<span class="when">${timeAgo(x.createdAt)}</span>
+      ${state.admin ? `<button class="mod-link" data-action="hide-comment" data-id="${esc(x.id)}">숨기기</button>` : ''}
     </li>`;
 }
 
@@ -104,6 +105,16 @@ const actions = {
     mine.set('debate', d.id, choice);
     ui.refresh('debate');
     toast(`${choice.toUpperCase()}에 투표했어요. 이유도 한 줄 남겨볼까요?`);
+  },
+
+  // 관리자: 지우지 않고 숨긴다. 관리자 모드의 '숨긴 글 · 댓글'에서 되살릴 수 있다
+  async 'hide-comment'(el) {
+    if (!confirm('이 댓글을 숨길까요?\n관리자 모드에서 다시 보이게 할 수 있어요.')) return;
+    await api.admin.hideComment(el.dataset.id);
+    const d = state.content.debate;
+    d.comments = d.comments.filter((x) => x.id !== el.dataset.id);
+    ui.refresh('debate', 'whileAway');
+    toast('댓글을 숨겼어요');
   },
 };
 

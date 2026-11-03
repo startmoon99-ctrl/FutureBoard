@@ -130,6 +130,34 @@ async function coreFlow(s, label, { password }) {
   await s.call('/api/admin/rollback', { method: 'POST', cookie, body: { version: st.publishedVersion } });
   const rolled = (await s.call('/api/content')).data;
   ok((await s.call('/api/config')).data.blocks[0].id === st.published.blocks[0].id && rolled.posts.length === after.posts.length, `[${label}] 롤백 (글은 그대로)`);
+
+  // 관리자: 글 · 댓글 숨기기 → 되살리기 (지우지 않는다)
+  if (password) ok((await s.call(`/api/admin/posts/${id}/hide`, { method: 'POST', body: { hidden: true } })).status === 401, `[${label}] 로그인 없이 숨기기 → 401`);
+  ok((await s.call(`/api/admin/posts/${id}/hide`, { method: 'POST', cookie, body: { hidden: true } })).status === 200, `[${label}] 글 숨기기`);
+  const cid = comment.data.id;
+  await s.call(`/api/admin/comments/${cid}/hide`, { method: 'POST', cookie, body: { hidden: true } });
+  const hiddenView = (await s.call('/api/content')).data;
+  ok(!hiddenView.posts.some((p) => p.id === id) && !hiddenView.debate.comments.some((x) => x.id === cid), `[${label}] 숨긴 글 · 댓글은 화면 데이터에서 빠짐`);
+  ok((await s.call(`/api/posts/${id}/like`, { method: 'POST', ip })).status === 404, `[${label}] 숨긴 글 추천 → 404`);
+  const list = (await s.call('/api/admin/hidden', { cookie })).data;
+  ok(list.posts.some((p) => p.id === id && p.likes === 1) && list.comments.some((x) => x.id === cid), `[${label}] 숨긴 목록 (숫자 유지)`);
+  const retake = await s.call('/api/posts', { method: 'POST', ip: ip + '8', body: { title: '같은 링크 다시', author: '세번째', link: 'https://example.com/smoke-' + label } });
+  ok(retake.data?.discovery?.first === true, `[${label}] 먼저 올린 글이 숨겨지면 다음 글이 최초 발견자`);
+  await s.call(`/api/admin/posts/${id}/hide`, { method: 'POST', cookie, body: { hidden: false } });
+  await s.call(`/api/admin/comments/${cid}/hide`, { method: 'POST', cookie, body: { hidden: false } });
+  await s.call(`/api/admin/posts/${retake.data.post.id}/hide`, { method: 'POST', cookie, body: { hidden: true } });
+  const restored = (await s.call('/api/content')).data;
+  const back = restored.posts.find((p) => p.id === id);
+  ok(back?.likes === 1 && back.firstDiscovery === false && restored.debate.comments.some((x) => x.id === cid), `[${label}] 되살리기 (숫자 유지, 최초 발견은 넘어간 쪽)`);
+  ok(restored.posts.length === after.posts.length, `[${label}] 되살린 뒤 글 수`);
+
+  // 운영자 닉네임은 관리자만
+  const fake = { method: 'POST', ip: ip + '7', body: { author: '퓨쳐보드 지기', text: '사칭' } };
+  ok((await s.call('/api/debate/comment', fake)).status === (password ? 400 : 201), `[${label}] 운영자 닉네임 사칭 ${password ? '거절' : '(비밀번호 없는 로컬은 관리자라 허용)'}`);
+  if (password) {
+    ok((await s.call('/api/posts', { method: 'POST', ip: ip + '6', body: { title: '사칭 글', author: 'FutureBoard 관리자' } })).status === 400, `[${label}] 운영자 닉네임 글 거절`);
+    ok((await s.call('/api/debate/comment', { ...fake, cookie })).status === 201, `[${label}] 관리자는 운영자 닉네임 사용`);
+  }
   return after;
 }
 

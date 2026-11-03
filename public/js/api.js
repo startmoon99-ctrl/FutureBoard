@@ -42,5 +42,9 @@ export const api = {
     resetDraft: () => post('/api/admin/draft/reset'),
     publish: (note) => post('/api/admin/publish', { note }),
     rollback: (version) => post('/api/admin/rollback', { version }),
+    // 글 · 댓글 숨기기 (hidden: false 면 되살리기)
+    hidden: () => request('/api/admin/hidden'),
+    hidePost: (id, hidden = true) => post(`/api/admin/posts/${encodeURIComponent(id)}/hide`, { hidden }),
+    hideComment: (id, hidden = true) => post(`/api/admin/comments/${encodeURIComponent(id)}/hide`, { hidden }),
   },
 };

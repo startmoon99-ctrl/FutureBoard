@@ -175,6 +175,17 @@ const actions = {
     ui.refresh('feed', 'whileAway');
   },
 
+  // 관리자: 지우지 않고 숨긴다. 관리자 모드의 '숨긴 글 · 댓글'에서 되살릴 수 있다
+  async 'hide-post'(el) {
+    if (!confirm('이 글을 숨길까요?\n관리자 모드에서 다시 보이게 할 수 있어요.')) return;
+    const id = el.dataset.id;
+    await api.admin.hidePost(id);
+    state.content.posts = state.content.posts.filter((x) => x.id !== id);
+    state.openPost = null;
+    ui.refresh('feed', 'whileAway', 'pulse');
+    toast('글을 숨겼어요');
+  },
+
   'open-write'() { openWrite(); },
   'close-write'() { $('#write-dialog').close(); },
 };

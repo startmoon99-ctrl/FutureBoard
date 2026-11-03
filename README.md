@@ -13,7 +13,7 @@ AI와 미래기술 커뮤니티. 기획서 v0.2의 첫 번째 프로토타입(43
 | --- | --- |
 | `/` | 메인: 관리자가 고른 블록들 (Published 구성) |
 | `/pulse` `/future` `/away` `/debate` `/predictions` `/community` `/prompts` `/challenge` `/people` | 블록마다 하나씩 있는 전용 페이지. 메인 블록의 "전체 보기"와 상단 메뉴가 연결된다 |
-| `/admin` | 관리자 모드 (블록 편집 · Draft · 미리보기 · 게시 · 롤백) |
+| `/admin` | 관리자 모드 (블록 편집 · Draft · 미리보기 · 게시 · 롤백 · 숨긴 글 · 댓글 되살리기) |
 | `/preview`, `/preview/…` | Draft 미리보기 (관리자만) |
 
 ## 구조

@@ -1,6 +1,7 @@
-// 공통: 화면 모드 · 상태 · 주소 · 유틸 · API · 브라우저 저장소
+// 공통: 주소 · 블록 목록 · 상태 · 유틸 · 브라우저 저장소
+// 서버 호출은 api.js, 화면 보기 전환(PC/모바일)은 view-mode.js 에 있다.
 
-// ---------- 화면 모드 ----------
+// ---------- 주소 ----------
 
 // /preview 는 Draft 구성을, 그 밖의 주소는 Published 구성을 그린다. 콘텐츠(Community Data)는 둘 다 같다.
 export const IS_PREVIEW = location.pathname === '/preview' || location.pathname.startsWith('/preview/');
@@ -9,65 +10,26 @@ export const BASE = IS_PREVIEW ? '/preview' : '';
 export const IS_EMBEDDED = window.self !== window.top;
 export const IS_PHONE_FRAME = new URLSearchParams(location.search).get('frame') === 'phone';
 
-// 화면 보기 전환. 휴대폰에서는 PC 화면('desktop'), PC 에서는 모바일 화면('mobile')을 고를 수 있다.
-// 실제 적용(뷰포트 폭 바꾸기)은 index.html <head> 의 스크립트가 그리기 전에 한다. 기준을 그쪽과 같게 유지한다.
-const SCREEN_MIN = Math.min(screen.width, screen.height);
-export const IS_PHONE = SCREEN_MIN > 0 && SCREEN_MIN < 768 && matchMedia('(pointer: coarse)').matches;
-export const viewMode = {
-  get() {
-    try { return localStorage.getItem('fb_view'); } catch { return null; }
-  },
-  set(v) {
-    try {
-      if (v) localStorage.setItem('fb_view', v);
-      else localStorage.removeItem('fb_view');
-    } catch { /* 저장소를 못 쓰면 전환하지 않는다 */ }
-  },
+// ---------- 블록 목록 ----------
+
+// 메인 블록 종류마다의 페이지 주소 · 기본 제목 · 아이콘 · 관리자 모드 표시.
+// 블록을 새로 만들 때: 여기 한 줄 + public/js/features/ 에 파일 하나 + features/index.js 등록
+//   + 페이지 주소를 server.js 의 SITE_PAGES · vercel.json rewrites 에 추가 + seed/site-config.json 에 블록 추가
+export const BLOCKS = {
+  pulse: { path: 'pulse', title: 'AI WORLD PULSE', icon: '<span class="live-dot"></span>', adminLabel: 'AI World Pulse', limitLabel: '키워드 수' },
+  futureChange: { path: 'future', title: '오늘 인류의 미래 변화', icon: '🌏', adminLabel: 'Daily AI · 오늘 인류의 미래 변화', limitLabel: '항목 수' },
+  whileAway: { path: 'away', title: '내가 없는 동안', icon: '⏱', adminLabel: '내가 없는 동안', limitLabel: '인기글 수' },
+  debate: { path: 'debate', title: '오늘의 질문', icon: '🗳', adminLabel: 'Daily Debate · 오늘의 질문', limitLabel: '댓글 수' },
+  predictions: { path: 'predictions', title: '미래 예측', icon: '🔮', adminLabel: 'Prediction · 예측', limitLabel: '예측 수' },
+  feed: { path: 'community', title: '커뮤니티', icon: '💬', adminLabel: 'Community Feed · 커뮤니티', limitLabel: '글 수' },
+  prompts: { path: 'prompts', title: '프롬프트 라이브러리', icon: '✨', adminLabel: 'Prompt Library · 프롬프트', limitLabel: '프롬프트 수' },
+  challenge: { path: 'challenge', title: '오늘의 AI 창작 챌린지', icon: '🎨', adminLabel: 'Daily Challenge · 창작 챌린지', limitLabel: '출품작 수' },
+  people: { path: 'people', title: '이번 주 선구자', icon: '🏅', adminLabel: '선구자 랭킹', limitLabel: '인원' },
 };
-export const FORCED_DESKTOP = !IS_EMBEDDED && IS_PHONE && viewMode.get() === 'desktop';
-export const PHONE_STAGE = !IS_EMBEDDED && !IS_PHONE && viewMode.get() === 'mobile';
-
-// ---------- 상태 ----------
-
-export const state = {
-  config: null,
-  content: null,
-  awayFrom: null,
-  openPost: null,
-  // 메인 커뮤니티 블록
-  feedFilter: '전체',
-  feedExtra: 0,
-  // 각 페이지의 필터 · 정렬 (페이지를 떠났다 와도 유지)
-  page: {},
-};
-
-// ---------- 블록 종류 ↔ 페이지 주소 ----------
-
-export const PAGE_PATHS = {
-  pulse: 'pulse',
-  futureChange: 'future',
-  whileAway: 'away',
-  debate: 'debate',
-  predictions: 'predictions',
-  feed: 'community',
-  prompts: 'prompts',
-  challenge: 'challenge',
-  people: 'people',
-};
-export const TYPE_BY_PATH = Object.fromEntries(Object.entries(PAGE_PATHS).map(([t, p]) => [p, t]));
-
-export const DEFAULT_TITLES = {
-  pulse: 'AI WORLD PULSE', futureChange: '오늘 인류의 미래 변화', whileAway: '내가 없는 동안', debate: '오늘의 질문',
-  predictions: '미래 예측', feed: '커뮤니티', prompts: '프롬프트 라이브러리', challenge: '오늘의 AI 창작 챌린지', people: '이번 주 선구자',
-};
-
-export const ICONS = {
-  pulse: '<span class="live-dot"></span>', futureChange: '🌏', whileAway: '⏱', debate: '🗳',
-  predictions: '🔮', feed: '💬', prompts: '✨', challenge: '🎨', people: '🏅',
-};
+const TYPE_BY_PATH = Object.fromEntries(Object.entries(BLOCKS).map(([t, b]) => [b.path, t]));
 
 export const homeHref = () => BASE || '/';
-export const pageHref = (type, query = '') => `${BASE}/${PAGE_PATHS[type]}${query}`;
+export const pageHref = (type, query = '') => `${BASE}/${BLOCKS[type].path}${query}`;
 
 // 지금 주소가 어느 페이지인지. 메인이면 null
 export function currentPageType() {
@@ -75,11 +37,32 @@ export function currentPageType() {
   return TYPE_BY_PATH[path] || null;
 }
 
+// ---------- 상태 ----------
+
+export const state = {
+  config: null, // 사이트 구성 (draft 또는 published)
+  content: null, // 커뮤니티 데이터 (GET /api/content)
+  awayFrom: null, // '내가 없는 동안'의 기준 시각
+  openPost: null, // 펼쳐 둔 글
+  feedFilter: '전체', // 메인 커뮤니티 블록의 분류
+  feedExtra: 0, // 메인 커뮤니티 블록에서 더보기로 늘린 개수
+  page: {}, // 각 페이지의 필터 · 정렬 (페이지를 떠났다 와도 유지)
+};
+
+// 페이지의 필터 · 정렬 상태. 처음이면 defaults 로 만든다
+export const pageState = (key, defaults) => (state.page[key] = state.page[key] || { ...defaults });
+
 // 페이지 제목은 관리자가 정한 블록 제목을 따른다
 export function blockTitle(type) {
   const b = state.config?.blocks.find((x) => x.type === type);
-  return b ? b.title : DEFAULT_TITLES[type];
+  return b ? b.title : BLOCKS[type].title;
 }
+
+// 기능 모듈이 쓰는 화면 동작. app.js 가 시작할 때 채운다 (기능 → app 으로 거꾸로 import 하지 않기 위해)
+export const ui = {
+  refresh: (...types) => {}, // 동작 뒤 다시 그리기: 메인이면 해당 블록, 페이지면 그 페이지
+  navigate: (url) => {}, // 사이트 안 주소로 이동
+};
 
 // ---------- 유틸 ----------
 
@@ -89,6 +72,7 @@ export const fmt = (n) => Number(n || 0).toLocaleString('ko-KR');
 export const pct = (a, b) => (a + b ? Math.round((a / (a + b)) * 100) : 50);
 export const ms = (iso) => new Date(iso).getTime();
 export const byNewest = (a, z) => ms(z.createdAt) - ms(a.createdAt);
+export const DAY = 86400000;
 
 export function timeAgo(iso) {
   const diff = Math.max(0, Date.now() - ms(iso));
@@ -103,19 +87,23 @@ export function timeAgo(iso) {
 
 export function dayLabel(iso) {
   const d = new Date(iso);
-  const today = new Date();
-  const days = Math.round((new Date(today.toDateString()) - new Date(d.toDateString())) / 86400000);
+  const days = Math.round((new Date(new Date().toDateString()) - new Date(d.toDateString())) / DAY);
   if (days === 0) return '오늘';
   if (days === 1) return '어제';
   return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 }
 
+export const shortDate = (iso) => new Date(iso).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+
 // 마감일까지 남은 날 (D-12 / D-day / 마감)
 export function dday(dateStr) {
-  const days = Math.ceil((new Date(dateStr + 'T23:59:59') - Date.now()) / 86400000);
+  const days = Math.ceil((new Date(dateStr + 'T23:59:59') - Date.now()) / DAY);
   if (days < 0) return '마감';
   return days === 0 ? 'D-day' : 'D-' + fmt(days);
 }
+
+// 목록을 key(item) 별로 묶어 { key: [items] }
+export const groupBy = (list, key) => list.reduce((acc, x) => ((acc[key(x)] = acc[key(x)] || []).push(x), acc), {});
 
 // 문자열로 정해지는 의사 난수 (같은 키워드는 늘 같은 추이선을 그린다)
 export function seeded(str) {
@@ -126,45 +114,6 @@ export function seeded(str) {
     h = Math.imul(h ^ (h >>> 13), 3266489909);
     return ((h ^= h >>> 16) >>> 0) / 4294967296;
   };
-}
-
-// ---------- 브라우저 저장소 ----------
-
-export const store = {
-  get(key, fallback) {
-    try {
-      const v = localStorage.getItem(key);
-      return v == null ? fallback : JSON.parse(v);
-    } catch {
-      return fallback;
-    }
-  },
-  set(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* 저장소를 못 써도 화면은 동작 */ }
-  },
-};
-
-// 브라우저별로 이미 누른 투표 · 추천을 기억한다 (계정 시스템 전 단계의 임시 방식)
-export const mine = {
-  get: (kind, id) => store.get('fb_mine', {})[kind + ':' + id],
-  set(kind, id, value) {
-    const all = store.get('fb_mine', {});
-    all[kind + ':' + id] = value;
-    store.set('fb_mine', all);
-  },
-};
-
-// ---------- 서버 ----------
-
-export async function api(path, options = {}) {
-  const res = await fetch(path, {
-    method: options.method || 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error || '요청에 실패했어요'), { status: res.status });
-  return data;
 }
 
 let toastTimer;
@@ -191,8 +140,35 @@ export async function copyText(text) {
   }
 }
 
+// ---------- 브라우저 저장소 ----------
+
+export const store = {
+  get(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v == null ? fallback : JSON.parse(v);
+    } catch {
+      return fallback;
+    }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* 저장소를 못 써도 화면은 동작 */ }
+  },
+};
+
+// 브라우저별로 이미 누른 투표 · 추천을 기억한다 (회원 계정 전 단계의 임시 방식 — 서버는 중복을 막지 못한다)
+export const mine = {
+  get: (kind, id) => store.get('fb_mine', {})[kind + ':' + id],
+  set(kind, id, value) {
+    const all = store.get('fb_mine', {});
+    all[kind + ':' + id] = value;
+    store.set('fb_mine', all);
+  },
+};
+
 // ---------- 분류 ----------
 
+// lib/config.js 의 CATEGORIES 와 같은 목록이어야 한다 (서버가 받을 수 있는 분류)
 export const CAT_COLORS = {
   '공지': '#fbbf24', '뉴스': '#60a5fa', '발견': '#f59e0b', '밈': '#f472b6', '바이브코딩': '#a78bfa',
   '프롬프트': '#22d3ee', 'AI아트': '#fb7185', '로보틱스': '#34d399', 'AGI·특이점': '#c084fc',

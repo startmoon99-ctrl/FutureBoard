@@ -1,53 +1,33 @@
-(() => {
-  'use strict';
+// 관리자 모드: 블록 편집 · Draft 저장 · 미리보기 · 게시 · 롤백
+// 블록 이름은 사이트와 같은 목록(js/core.js BLOCKS), 서버 호출은 js/api.js 를 쓴다.
+import { BLOCKS, $, esc, toast } from './js/core.js';
+import { api } from './js/api.js';
 
+(() => {
   // 빌더가 다른 화면 안(iframe)에서 열리면 전체 창으로 빼낸다
   if (window.self !== window.top) {
     window.top.location.href = '/admin';
     return;
   }
 
-  const TYPE_INFO = {
-    pulse: { label: 'AI World Pulse', limit: '키워드 수' },
-    futureChange: { label: 'Daily AI · 오늘 인류의 미래 변화', limit: '항목 수' },
-    whileAway: { label: '내가 없는 동안', limit: '인기글 수' },
-    debate: { label: 'Daily Debate · 오늘의 질문', limit: '댓글 수' },
-    predictions: { label: 'Prediction · 예측', limit: '예측 수' },
-    feed: { label: 'Community Feed · 커뮤니티', limit: '글 수' },
-    prompts: { label: 'Prompt Library · 프롬프트', limit: '프롬프트 수' },
-    challenge: { label: 'Daily Challenge · 창작 챌린지', limit: '출품작 수' },
-    people: { label: '선구자 랭킹', limit: '인원' },
-  };
+  const blockInfo = (type) => ({ label: BLOCKS[type]?.adminLabel || type, limit: BLOCKS[type]?.limitLabel || '개수' });
   const SIZE_LABEL = { full: '전체 폭', half: '절반 폭' };
 
   let server = null;   // 서버에 저장된 상태 (draft, published, versions …)
   let draft = null;    // 편집 중인 사본 (저장 전)
   let savedJson = '';  // 마지막으로 저장된 Draft
 
-  const $ = (s) => document.querySelector(s);
   const clone = (v) => JSON.parse(JSON.stringify(v));
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const when = (iso) => new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-  async function api(path, options = {}) {
-    const res = await fetch(path, {
-      method: options.method || 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401 && path !== '/api/admin/login') showLogin('로그인이 만료됐어요. 다시 입력하세요.');
-    if (!res.ok) throw Object.assign(new Error(data.error || '요청에 실패했어요'), { status: res.status });
-    return data;
-  }
-
-  let toastTimer;
-  function toast(msg) {
-    const el = $('#toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  // 관리자 API 호출. 로그인이 풀렸으면(401) 로그인 화면을 다시 띄운다
+  async function call(request) {
+    try {
+      return await request;
+    } catch (err) {
+      if (err.status === 401) showLogin('로그인이 만료됐어요. 다시 입력하세요.');
+      throw err;
+    }
   }
 
   const isUnsaved = () => JSON.stringify(draft) !== savedJson;
@@ -71,7 +51,7 @@
       if (!a) continue;
       if (a.visible !== b.visible) out.push(`"${b.title}" ${b.visible ? '표시' : '숨김'}`);
       if (a.title !== b.title) out.push(`제목: "${a.title}" → "${b.title}"`);
-      if (a.limit !== b.limit) out.push(`"${b.title}" ${TYPE_INFO[b.type].limit} ${a.limit} → ${b.limit}`);
+      if (a.limit !== b.limit) out.push(`"${b.title}" ${blockInfo(b.type).limit} ${a.limit} → ${b.limit}`);
       if (a.size !== b.size) out.push(`"${b.title}" ${SIZE_LABEL[a.size]} → ${SIZE_LABEL[b.size]}`);
     }
     return out;
@@ -99,7 +79,7 @@
   function renderBlocks() {
     const n = draft.blocks.length;
     $('#block-list').innerHTML = draft.blocks.map((b, i) => {
-      const info = TYPE_INFO[b.type] || { label: b.type, limit: '개수' };
+      const info = blockInfo(b.type);
       return `
         <li class="block-row ${b.visible ? '' : 'off'}" data-idx="${i}" data-id="${esc(b.id)}">
           <span class="handle" title="끌어서 순서 변경">⋮⋮</span>
@@ -268,7 +248,7 @@
   // ---------- 저장 / 미리보기 / 게시 / 롤백 ----------
 
   async function saveDraft({ quiet = false } = {}) {
-    const next = await api('/api/admin/draft', { method: 'PUT', body: { config: draft } });
+    const next = await call(api.admin.saveDraft(draft));
     applyServer(next);
     if (previewPath() === '/preview') reloadFrame();
     if (!quiet) toast('Draft를 저장했어요. 실제 사이트는 그대로예요.');
@@ -302,7 +282,7 @@
     try {
       if (isUnsaved()) await saveDraft({ quiet: true });
       const note = $('#publish-note').value.trim() || diff(server.published, draft).slice(0, 2).join(', ');
-      const next = await api('/api/admin/publish', { method: 'POST', body: { note } });
+      const next = await call(api.admin.publish(note));
       dialog.close();
       applyServer(next);
       reloadFrame();
@@ -318,7 +298,7 @@
     const v = Number(btn.dataset.rollback);
     if (!confirm(`실제 사이트를 v${v} 구성으로 되돌릴까요?\n\n· 커뮤니티 글·댓글·투표는 그대로 유지됩니다\n· 편집 중인 Draft는 바뀌지 않습니다`)) return;
     try {
-      const next = await api('/api/admin/rollback', { method: 'POST', body: { version: v } });
+      const next = await call(api.admin.rollback(v));
       applyServer(next, { keepEdits: true });
       reloadFrame();
       toast(`v${v} 구성으로 롤백해서 v${next.publishedVersion}로 게시했어요`);
@@ -330,7 +310,7 @@
   $('#btn-reset').addEventListener('click', async () => {
     if (!confirm('편집 중인 Draft를 버리고 현재 게시본으로 되돌릴까요?')) return;
     try {
-      applyServer(await api('/api/admin/draft/reset', { method: 'POST' }));
+      applyServer(await call(api.admin.resetDraft()));
       if (previewPath() === '/preview') reloadFrame();
       toast('Draft를 현재 게시본과 같게 맞췄어요');
     } catch (err) {
@@ -344,7 +324,7 @@
   const exitAdmin = async () => {
     leaving = true;
     // 비밀번호로 들어온 경우 종료하면 로그아웃까지 한다
-    if (session?.required) await api('/api/admin/logout', { method: 'POST' }).catch(() => {});
+    if (session?.required) await api.admin.logout().catch(() => {});
     location.href = '/';
   };
   const exitDialog = $('#exit-dialog');
@@ -393,11 +373,11 @@
     err.hidden = true;
     $('#login-submit').disabled = true;
     try {
-      await api('/api/admin/login', { method: 'POST', body: { password: $('#login-password').value } });
+      await api.admin.login($('#login-password').value);
       session = { ...session, authed: true };
       $('#login-screen').hidden = true;
       // 이미 편집 중이었다면(로그인 만료) 편집 내용을 지키고, 처음이면 서버 상태를 불러온다
-      if (!draft) applyServer(await api('/api/admin/state'));
+      if (!draft) applyServer(await call(api.admin.state()));
       reloadFrame();
     } catch (ex) {
       err.textContent = ex.message;
@@ -409,7 +389,7 @@
 
   async function start() {
     try {
-      session = await api('/api/admin/session');
+      session = await api.admin.session();
       if (session.locked) {
         showLogin('관리자 비밀번호(ADMIN_PASSWORD)가 설정되지 않아 관리자 모드가 잠겨 있어요. Vercel 환경 변수에 추가한 뒤 다시 배포하세요.');
         $('#login-password').hidden = true;
@@ -417,7 +397,7 @@
         return;
       }
       if (!session.authed) return showLogin();
-      applyServer(await api('/api/admin/state'));
+      applyServer(await call(api.admin.state()));
     } catch (e) {
       if (e.status !== 401) toast('서버에 연결할 수 없어요: ' + e.message);
     }

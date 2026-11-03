@@ -20,27 +20,16 @@ AI와 미래기술 커뮤니티. 기획서 v0.2의 첫 번째 프로토타입(43
 
 ```
 START.bat            로컬 실행 (이미 켜져 있으면 브라우저만 연다)
-server.js            로컬 서버: 정적 파일 + /api 를 lib/app.js 로 넘김
-api/index.js         Vercel 함수: /api/* 를 lib/app.js 로 넘김 (vercel.json rewrite)
-lib/app.js           API 처리 (로컬과 배포본이 같은 코드)
-lib/store.js         저장소: 로컬은 data 폴더, 배포본은 Upstash Redis
-lib/auth.js          관리자 비밀번호 · 로그인 쿠키
-lib/seed.js          저장소가 비어 있을 때 넣는 초기 데이터 (seed/*.json)
-public/              화면 (index.html + js/ = 사이트, admin.* = 관리자 모드)
-  js/core.js         공통: 화면 모드 · 상태 · 페이지 주소 · 유틸 · API
-  js/widgets.js      메인과 페이지가 함께 쓰는 조각 (글 목록, 예측 카드, 그래프 …)
-  js/home.js         메인 블록
-  js/pages.js        블록별 전용 페이지
-  js/app.js          주소 이동(새로고침 없이 화면만 바꿈) · 사용자 동작 · 시작
-vercel.json          배포 설정: public/ 을 그대로 내보내고 /api · /admin · /preview 를 연결
+server.js            로컬 서버 (정적 파일 + /api)        api/index.js  Vercel 함수
+lib/                 서버: app(입구) · routes(HTTP) · repos(데이터 접근) · db(저장소 · 이전) · auth · config
+public/              화면: index.html + js/ (기능별 features/), admin.* = 관리자 모드
+scripts/check.js     정적 점검 (npm run check)         tests/  서버 통합 테스트 (npm test)
 ```
 
-데이터는 문서 두 개로 완전히 나뉜다.
+파일별 역할, 구조 원칙, 기능을 추가하는 순서는 [CLAUDE.md](CLAUDE.md) 에 있다.
 
-- `community`: Community Data — 글, 댓글, 투표, 예측, 프롬프트 …
-- `site-config`: Site Configuration — Draft, 게시본, 버전 기록
-
-관리자 모드는 `site-config`만 바꾼다. 어떤 UI 변경 · 롤백을 해도 커뮤니티 데이터는 남는다.
+커뮤니티 데이터(글 · 댓글 · 투표 …)와 사이트 구성(Draft · 게시본 · 버전 기록)은 따로 저장된다.
+관리자 모드는 사이트 구성만 바꾼다. 어떤 UI 변경 · 롤백을 해도 커뮤니티 데이터는 남는다.
 
 ## 환경 변수
 
@@ -64,12 +53,13 @@ Vercel에 저장소가 아직 연결되지 않았으면 사이트는 초기 데�
 ## 프로토타입의 한계
 
 - 회원 계정이 없다. 투표 · 추천 중복 방지, 연속 방문, "내가 없는 동안"은 브라우저(localStorage) 기준이다.
-- 데이터는 문서 두 개를 통째로 읽고 쓴다. 동시에 들어온 쓰기는 버전 비교로 다시 시도해 잃어버리지 않지만, 사용자가 많아지면 글 · 댓글 · 투표를 각각의 테이블로 나눠야 한다.
+- 화면은 처음에 커뮤니티 데이터 전체를 한 번에 받는다 (`GET /api/content`). 글이 수천 개가 되면 페이지 단위로 받는 API 로 바꿔야 한다.
 - AI World Pulse의 급상승 수치와 "토론 중" 인원은 시뮬레이션이다 (DEMO 표시).
 - 초기 글 · 인물 · 예측은 분위기를 보여주기 위한 예시 콘텐츠다.
-- 봇 대응은 최소한만 있다: 글 15초 · 댓글 5초 간격 제한(배포본에서는 함수 인스턴스마다 따로 센다), 숨은 입력칸(허니팟).
+- 봇 대응은 최소한만 있다: IP별 횟수 제한(글 15초 · 댓글 5초 · 추천/투표 분당 60회 · 로그인 15분 10회), 숨은 입력칸(허니팟).
 
 ## 데이터 초기화
 
 - 로컬: 서버를 끄고 `data` 폴더를 지운 뒤 다시 실행.
 - 배포본: Upstash 콘솔에서 `futureboard:*` 키를 지우면 다음 접속 때 초기 데이터로 다시 채워진다.
+- 예전 형식(문서 하나) 데이터는 옮긴 뒤에도 백업으로 남아 있다: 로컬 `data/community.json` · `data/site-config.json`, 배포본 `futureboard:community`.

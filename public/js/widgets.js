@@ -1,25 +1,72 @@
-// 메인 블록과 페이지가 함께 쓰는 화면 조각
-import { state, esc, fmt, pct, timeAgo, dday, mine, seeded, pageHref, CAT_COLORS } from './core.js';
+// 여러 기능이 함께 쓰는 화면 조각: 블록 머리 · 페이지 틀 · 카드 · 필터 · 그래프 · 글 목록 · 카드형 항목
+// 특정 기능에서만 쓰는 조각은 그 기능 파일(features/*.js)에 둔다.
+import { state, esc, fmt, pct, timeAgo, dday, mine, seeded, homeHref, pageHref, blockTitle, BLOCKS, CAT_COLORS } from './core.js';
 
-// ---------- 막대 · 칩 ----------
+// ---------- 틀 ----------
 
-// YES 비율 막대. data-bar 키가 같으면 다시 그릴 때 이전 값에서 새 값으로 움직인다 (app.js animateBars)
-export const bar = (key, yesPct, cls = '') =>
-  `<div class="bar ${cls}"><div class="bar-fill" data-bar="${esc(key)}" data-w="${yesPct}"></div></div>`;
-
-export function chips(items, active, action, extra = '') {
-  return `<div class="chips">${items.map(([value, label]) =>
-    `<button class="filter ${value === active ? 'on' : ''}" data-action="${action}" data-value="${esc(value)}" ${extra}>${esc(label ?? value)}</button>`).join('')}</div>`;
-}
-
-export function tabs(items, active, action) {
-  return `<div class="tabs" role="tablist">${items.map(([value, label]) =>
-    `<button class="tab ${value === active ? 'on' : ''}" role="tab" aria-selected="${value === active}" data-action="${action}" data-value="${esc(value)}">${esc(label)}</button>`).join('')}</div>`;
+// 메인 블록의 머리. 오른쪽 '전체 보기'는 그 블록의 페이지로 간다
+export function blockHead(block, extra = '') {
+  return `<div class="block-head">
+    <span class="icon">${BLOCKS[block.type].icon}</span>
+    <h2><a href="${pageHref(block.type)}" data-link>${esc(block.title)}</a></h2>${extra}
+    ${more(block.type)}
+  </div>`;
 }
 
 export const more = (type, label = '전체 보기') => `<a class="more" href="${pageHref(type)}" data-link>${label} <span aria-hidden="true">›</span></a>`;
 
-// ---------- 그래프 ----------
+// 페이지 공통 틀: 위치 · 제목 · 숫자 요약 · 설명 · 본문(+ 옆칸)
+export function shell(type, { desc = '', stats = [], main, side = '' }) {
+  const title = esc(blockTitle(type));
+  return `
+    <div class="page page-${BLOCKS[type].path}">
+      <header class="page-head">
+        <nav class="crumbs" aria-label="위치"><a href="${homeHref()}" data-link>홈</a><span aria-hidden="true">›</span><span>${title}</span></nav>
+        <div class="page-title-row">
+          <h1><span class="icon">${BLOCKS[type].icon}</span>${title}</h1>
+          ${stats.length ? `<div class="page-stats">${stats.map(([k, v, attrs = '']) => `
+            <div class="pstat"><div class="v" ${attrs}>${v}</div><div class="k">${k}</div></div>`).join('')}</div>` : ''}
+        </div>
+        ${desc ? `<p class="page-desc">${desc}</p>` : ''}
+      </header>
+      <div class="page-body ${side ? 'has-side' : ''}">
+        <div class="page-main">${main}</div>
+        ${side ? `<aside class="page-side">${side}</aside>` : ''}
+      </div>
+    </div>`;
+}
+
+export const card = (title, body, extra = '', cls = '') =>
+  `<section class="card ${cls}">${title ? `<div class="card-head"><h2>${title}</h2>${extra}</div>` : ''}${body}</section>`;
+
+// ---------- 필터 ----------
+
+// target: 동작 이름(문자열) 또는 페이지 필터 { key, field } — 후자는 app.js 가 state.page[key][field] 를 바꾸고 다시 그린다
+const filterAttrs = (target) => (typeof target === 'string'
+  ? `data-action="${target}"`
+  : `data-action="set-filter" data-key="${target.key}" data-field="${target.field}"`);
+
+export function chips(items, active, target) {
+  return `<div class="chips">${items.map(([value, label]) =>
+    `<button class="filter ${value === active ? 'on' : ''}" ${filterAttrs(target)} data-value="${esc(value)}">${esc(label ?? value)}</button>`).join('')}</div>`;
+}
+
+export function tabs(items, active, target) {
+  return `<div class="tabs" role="tablist">${items.map(([value, label]) =>
+    `<button class="tab ${value === active ? 'on' : ''}" role="tab" aria-selected="${value === active}" ${filterAttrs(target)} data-value="${esc(value)}">${esc(label)}</button>`).join('')}</div>`;
+}
+
+// 입력할 때마다 state.page[key][field] 가 바뀐다 (app.js)
+export const searchBox = ({ key, field }, value, placeholder) => `
+  <label class="search"><span aria-hidden="true">⌕</span>
+    <input type="search" id="search-${key}" data-filter-key="${key}" data-filter-field="${field}" value="${esc(value)}" placeholder="${placeholder}" autocomplete="off">
+  </label>`;
+
+// ---------- 막대 · 그래프 ----------
+
+// YES 비율 막대. data-bar 키가 같으면 다시 그릴 때 이전 값에서 새 값으로 움직인다 (app.js animateBars)
+export const bar = (key, yesPct, cls = '') =>
+  `<div class="bar ${cls}"><div class="bar-fill" data-bar="${esc(key)}" data-w="${yesPct}"></div></div>`;
 
 // 작은 추이선. 끝값이 오른쪽 끝에 오도록 그린다
 export function sparkline(values, { w = 120, h = 32, color = 'var(--up)' } = {}) {
@@ -46,8 +93,8 @@ export function trendSeries(name, change) {
   });
 }
 
-// 날짜별 꺾은선 그래프 (Future Index)
-export function lineChart(points, { h = 180 } = {}) {
+// 날짜별 꺾은선 그래프
+export function lineChart(points, { h = 180, label = '추이' } = {}) {
   const w = 640;
   const pad = { t: 18, r: 16, b: 26, l: 32 };
   const vals = points.map((p) => p.value);
@@ -58,7 +105,7 @@ export function lineChart(points, { h = 180 } = {}) {
   const line = points.map((p, i) => `${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
   const grid = [min, Math.round((min + max) / 2), max];
   const last = points.length - 1;
-  return `<svg class="linechart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Future Index 추이">
+  return `<svg class="linechart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">
     ${grid.map((g) => `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(g)}" y2="${y(g)}" class="grid"/><text x="${pad.l - 6}" y="${y(g) + 4}" class="axis" text-anchor="end">${g}</text>`).join('')}
     <polyline points="${x(0)},${h - pad.b} ${line} ${x(last)},${h - pad.b}" class="area"/>
     <polyline points="${line}" class="line"/>
@@ -68,9 +115,14 @@ export function lineChart(points, { h = 180 } = {}) {
   </svg>`;
 }
 
-// ---------- 커뮤니티 글 ----------
+// ---------- 커뮤니티 글 (커뮤니티 · 내가 없는 동안이 함께 쓴다) ----------
 
 export const isNewSince = (p) => state.awayFrom && new Date(p.createdAt).getTime() > state.awayFrom;
+
+// 고정 공지가 먼저, 그다음 최신순
+export const feedOrder = (a, z) => (z.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(z.createdAt) - new Date(a.createdAt);
+
+export const postLink = (p) => `<a class="t" href="${pageHref('feed', '?open=' + p.id)}" data-link>${esc(p.title)}</a>`;
 
 export function postRow(p) {
   const liked = mine.get('like', p.id);
@@ -100,10 +152,7 @@ export function postRow(p) {
     </article>`;
 }
 
-// 고정 공지가 먼저, 그다음 최신순
-export const feedOrder = (a, z) => (z.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(z.createdAt) - new Date(a.createdAt);
-
-// ---------- 예측 ----------
+// ---------- 예측 카드 (예측 · 선구자 페이지) ----------
 
 function verdictOf(p) {
   const my = mine.get('pred', p.id);
@@ -115,10 +164,10 @@ function verdictOf(p) {
   return my ? `내 예측: <b>${my.toUpperCase()}</b> · 진행 중` : '';
 }
 
-function predButtons(p, cls = '') {
+function predButtons(p) {
   const my = mine.get('pred', p.id);
   if (p.status === 'resolved') return '<span class="chip">판정 완료</span>';
-  return `<div class="pred-btns ${cls}">
+  return `<div class="pred-btns">
     <button class="vote yes ${my === 'yes' ? 'mine' : ''}" data-action="pred-vote" data-id="${esc(p.id)}" data-choice="yes" ${my ? 'disabled' : ''}>YES</button>
     <button class="vote no ${my === 'no' ? 'mine' : ''}" data-action="pred-vote" data-id="${esc(p.id)}" data-choice="no" ${my ? 'disabled' : ''}>NO</button>
   </div>`;
@@ -149,7 +198,7 @@ export function predictionCard(p) {
     <div class="pcard ${resolved ? 'resolved' : ''}">
       <div class="pcard-top">
         <span class="chip">${esc(p.category)}</span>
-        <span class="pcard-d ${resolved ? '' : dday(p.deadline) === 'D-day' ? 'soon' : ''}">${resolved ? '판정 완료' : dday(p.deadline)}</span>
+        <span class="pcard-d ${!resolved && dday(p.deadline) === 'D-day' ? 'soon' : ''}">${resolved ? '판정 완료' : dday(p.deadline)}</span>
       </div>
       <p class="pcard-q">${esc(p.question)}</p>
       <div class="pcard-prob">
@@ -164,7 +213,7 @@ export function predictionCard(p) {
     </div>`;
 }
 
-// ---------- 프롬프트 ----------
+// ---------- 프롬프트 카드 ----------
 
 // [대괄호] 부분은 채워 넣을 자리라서 강조한다
 const markSlots = (text) => esc(text).replace(/\[([^\]\n]{1,30})\]/g, '<mark class="slot">[$1]</mark>');
@@ -181,9 +230,9 @@ export function promptCard(p, rank, { full = false } = {}) {
     </div>`;
 }
 
-// ---------- 챌린지 ----------
+// ---------- 챌린지 출품작 · 사람 카드 ----------
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+export const MEDALS = ['🥇', '🥈', '🥉'];
 
 export function entryCard(e, place, voted) {
   return `
@@ -200,8 +249,6 @@ export function entryCard(e, place, voted) {
       </div>
     </div>`;
 }
-
-// ---------- 사람 ----------
 
 export function personCard(p, i) {
   return `

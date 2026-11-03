@@ -2,6 +2,9 @@
 
 결정일 2026-11-03. 아직 아무것도 만들거나 옮기지 않았다. 이 문서는 Step 5(실제 이전)의 기준이다.
 
+**상태: 보류 (2026-11-03).** Supabase 프로젝트는 아직 만들지 않았다. 테이블 SQL 은 [db/migrations/001_init.sql](../db/migrations/001_init.sql) 에 준비돼 있다(실행 전).
+다시 시작할 때: Vercel → future-board → Storage → Create Database → Supabase (Seoul, Free, 세 환경 모두 연결, Prefix 없음) → SQL Editor 에서 001_init.sql 실행.
+
 ## 1. 결정
 
 | 항목 | 결정 | 이유 |

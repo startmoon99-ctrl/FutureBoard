@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>퓨쳐보드 관리자 모드</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin">
+  <div class="admin-main">
+    <aside class="editor">
+      <div class="editor-head">
+        <div class="editor-title">
+          <span class="logo"><span class="logo-mark">◢</span>관리자 모드</span>
+          <button class="btn btn-sm btn-ghost exit-btn" id="btn-exit">✕ 관리자 모드 종료</button>
+        </div>
+        <div class="status">
+          <span class="pill" id="pill-save"></span>
+          <span class="pill" id="pill-publish"></span>
+          <span class="pill pill-muted" id="pill-version"></span>
+        </div>
+        <div class="admin-actions">
+          <button class="btn" id="btn-save">Draft 저장</button>
+          <button class="btn" id="btn-preview">미리보기 ↗</button>
+          <button class="btn btn-primary" id="btn-publish">게시하기</button>
+        </div>
+      </div>
+
+      <div class="editor-body">
+        <section class="panel">
+          <h3>사이트 기본 정보</h3>
+          <label class="field"><span>사이트 이름</span><input id="f-title" maxlength="30"></label>
+          <label class="field"><span>한 줄 소개</span><input id="f-tagline" maxlength="80"></label>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>홈페이지 블록</h3>
+            <span class="muted">⋮⋮ 를 끌어서 순서 변경</span>
+          </div>
+          <ol class="block-list" id="block-list"></ol>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>게시 기록</h3>
+            <button class="btn btn-sm" id="btn-reset">게시본을 Draft로 불러오기</button>
+          </div>
+          <p class="muted small">롤백은 사이트 구성(UI)만 되돌립니다. 게시글·댓글·투표 등 커뮤니티 데이터는 그대로 유지됩니다.</p>
+          <ol class="versions" id="versions"></ol>
+        </section>
+      </div>
+    </aside>
+
+    <section class="preview-pane">
+      <div class="preview-toolbar">
+        <div class="seg" id="preview-mode">
+          <label><input type="radio" name="pv" value="/preview" checked><span>Draft 미리보기</span></label>
+          <label><input type="radio" name="pv" value="/"><span>실제 사이트 (Published)</span></label>
+        </div>
+        <div class="seg" id="preview-device">
+          <label><input type="radio" name="dv" value="pc" checked><span>PC</span></label>
+          <label><input type="radio" name="dv" value="mobile"><span>모바일</span></label>
+        </div>
+        <span class="muted small" id="preview-note">저장된 Draft를 보여줍니다</span>
+      </div>
+      <div class="frame-wrap" id="frame-wrap">
+        <iframe id="frame" src="/preview" title="사이트 미리보기"></iframe>
+      </div>
+    </section>
+  </div>
+
+  <dialog class="modal" id="publish-dialog">
+    <form method="dialog" class="modal-body" id="publish-form">
+      <div class="modal-head"><h3>게시하기 — 최종 확인</h3></div>
+      <p class="muted">아래 변경 사항이 실제 사이트에 반영됩니다.</p>
+      <ul class="change-summary" id="change-summary"></ul>
+      <label class="field"><span>게시 메모 (선택)</span><input id="publish-note" maxlength="80" placeholder="예: 오늘의 질문을 맨 위로"></label>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="publish-cancel">취소</button>
+        <button type="submit" class="btn btn-primary">게시하기</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="exit-dialog">
+    <div class="modal-body">
+      <div class="modal-head"><h3>관리자 모드 종료</h3></div>
+      <p class="muted">저장하지 않은 변경이 있어요. Draft는 게시하기 전까지 실제 사이트에 반영되지 않아요.</p>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="exit-cancel">취소</button>
+        <button type="button" class="btn" id="exit-discard">저장하지 않고 종료</button>
+        <button type="button" class="btn btn-primary" id="exit-save">Draft 저장 후 종료</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="login-screen" id="login-screen" hidden>
+    <form class="login-card" id="login-form">
+      <span class="logo"><span class="logo-mark">◢</span>관리자 모드</span>
+      <p class="muted" id="login-message">관리자 비밀번호를 입력하세요.</p>
+      <input type="password" id="login-password" autocomplete="current-password" placeholder="비밀번호" required>
+      <p class="form-error" id="login-error" hidden></p>
+      <button class="btn btn-primary" id="login-submit">들어가기</button>
+      <a class="muted small" href="/">← 사이트로 돌아가기</a>
+    </form>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/admin.js"></script>
+</body>
+</html>

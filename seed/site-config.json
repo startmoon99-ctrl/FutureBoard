@@ -1,0 +1,15 @@
+{
+  "siteTitle": "퓨쳐보드",
+  "tagline": "오늘 인류의 미래가 얼마나 바뀌었는지 확인하는 곳",
+  "blocks": [
+    { "id": "pulse", "type": "pulse", "title": "AI WORLD PULSE", "visible": true, "limit": 6, "size": "full" },
+    { "id": "future", "type": "futureChange", "title": "오늘 인류의 미래 변화", "visible": true, "limit": 4, "size": "half" },
+    { "id": "away", "type": "whileAway", "title": "내가 없는 동안", "visible": true, "limit": 3, "size": "half" },
+    { "id": "debate", "type": "debate", "title": "오늘의 질문", "visible": true, "limit": 4, "size": "half" },
+    { "id": "predictions", "type": "predictions", "title": "미래 예측", "visible": true, "limit": 4, "size": "half" },
+    { "id": "feed", "type": "feed", "title": "커뮤니티", "visible": true, "limit": 12, "size": "full" },
+    { "id": "prompts", "type": "prompts", "title": "프롬프트 라이브러리", "visible": true, "limit": 4, "size": "half" },
+    { "id": "challenge", "type": "challenge", "title": "오늘의 AI 창작 챌린지", "visible": true, "limit": 4, "size": "half" },
+    { "id": "people", "type": "people", "title": "이번 주 선구자", "visible": true, "limit": 5, "size": "full" }
+  ]
+}

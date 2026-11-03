@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>퓨쳐보드</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="preview-banner" class="preview-banner" hidden>
+    <b>DRAFT 미리보기</b> — 아직 게시되지 않은 구성입니다. 실제 사이트는 바뀌지 않았어요.
+    <a href="/admin">빌더로 돌아가기</a>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="logo" href="/" id="logo">
+        <span class="logo-mark">◢</span>
+        <span id="site-title">퓨쳐보드</span>
+      </a>
+      <nav class="nav" id="nav"></nav>
+      <div class="topbar-right">
+        <span class="streak" id="streak" hidden></span>
+        <button class="btn btn-primary" data-action="open-write">글쓰기</button>
+        <a class="btn btn-ghost" href="/admin" title="관리자 빌더">⚙</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <p class="hero-date" id="hero-date"></p>
+    <p class="hero-tagline" id="tagline"></p>
+  </div>
+
+  <main class="blocks" id="blocks">
+    <div class="loading">불러오는 중…</div>
+  </main>
+
+  <footer class="footer">
+    <span>퓨쳐보드 로컬 프로토타입</span>
+    <span>·</span>
+    <span>AI 생성 콘텐츠는 라벨로 구분합니다</span>
+    <span>·</span>
+    <a href="/admin">관리자 빌더</a>
+  </footer>
+
+  <dialog class="modal" id="write-dialog">
+    <form method="dialog" id="write-form" class="modal-body">
+      <div class="modal-head">
+        <h3>새 글</h3>
+        <button type="button" class="icon-btn" data-action="close-write" aria-label="닫기">✕</button>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>분류</span>
+          <select name="category" id="write-category"></select>
+        </label>
+        <label class="field grow">
+          <span>닉네임</span>
+          <input name="author" id="write-author" maxlength="20" placeholder="닉네임">
+        </label>
+        <label class="check">
+          <input type="checkbox" name="anonymous" id="write-anon"> 익명
+        </label>
+      </div>
+      <label class="field">
+        <span>제목</span>
+        <input name="title" id="write-title" maxlength="100" required placeholder="오늘 뭐 재미있는 거 나왔나요?">
+      </label>
+      <label class="field">
+        <span>내용</span>
+        <textarea name="body" rows="6" maxlength="3000" placeholder="밈도, 진지한 분석도 환영"></textarea>
+      </label>
+      <label class="field">
+        <span>출처 링크 <em>— 처음 올린 링크면 최초 발견자로 기록돼요 (익명 제외)</em></span>
+        <input name="link" type="url" maxlength="300" placeholder="https://">
+      </label>
+      <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <fieldset class="field">
+        <span>작성 방식</span>
+        <div class="seg">
+          <label><input type="radio" name="aiLabel" value="직접 작성" checked><span>직접 작성</span></label>
+          <label><input type="radio" name="aiLabel" value="AI 보조 작성"><span>AI 보조 작성</span></label>
+          <label><input type="radio" name="aiLabel" value="AI 생성"><span>AI 생성</span></label>
+        </div>
+      </fieldset>
+      <p class="form-error" id="write-error" hidden></p>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-action="close-write">취소</button>
+        <button type="submit" class="btn btn-primary">올리기</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
